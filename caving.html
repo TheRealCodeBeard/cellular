@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Caving</title>
+	<meta charset="UTF-8">
+	<style type="text/css">
+		#canvas
+		{
+			border:solid 2px maroon;
+		}
+		body
+		{
+			background-color:black;
+		}
+		.holder
+		{
+			padding-top:50px;
+			text-align:center;
+		}
+		.controls{
+			margin-bottom: 5px;
+		}
+		.controls input,.controls button{
+			border:solid 1px gray;
+			font-family: monospace;
+			vertical-align: -5px;
+		}
+		.controls input{
+			width: 3em;
+		}
+	</style>
+</head>
+<body>
+	<div class='holder'>
+		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
+		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+	</div>
+	<script>
+		(function(){
+
+			var Cell = function(canvas_id){
+				var me = this;
+				var canvas = document.getElementById(canvas_id);
+				me.ctx = canvas.getContext('2d');
+				me.universe=null;
+				me.w=60;
+				me.h=60;
+				me.cln = null;
+				me.black = 'rgb(0,0,0)';
+				me.white = 'rgb(255,255,255)';
+				me.red = 'rgb(255,0,0)';
+				me.green = 'rgb(0,255,0)';
+				me.blue = 'rgb(0,0,255)';
+				me.gray = 'rgb(100,100,100)';
+			};
+		
+			Cell.prototype.choose = function(a,b,limit){
+				return (Math.random()< limit ? a : b);
+			};
+
+			Cell.prototype.generate = function(){
+				var f = this;
+				var v = document.getElementById('chance').value;
+				f.universe=[];
+				for(var i = 0; i < f.w; i++) {
+					f.universe[i] = [];
+					for(var j = 0; j < f.h; j++) {
+						f.universe[i][j] = f.choose(0,1,v);
+					}
+				}
+			};
+			
+			Cell.prototype.draw = function(){
+				var me = this;
+				if(me.ctx){
+					var wh=5;
+					for(var i = 0; i < me.w; i++) {
+						for(var j = 0; j < me.h; j++) {
+							if(me.universe[j][i]===2){
+								me.ctx.fillStyle = me.gray;
+							} else if(me.universe[j][i]===3){
+								me.ctx.fillStyle = me.blue;
+							} else if(me.universe[j][i]===4){
+								me.ctx.fillStyle = me.red;
+							} else if(me.universe[j][i]===5){
+								me.ctx.fillStyle = me.green;
+							} else {
+								me.ctx.fillStyle = me.universe[j][i]?me.white:me.black;
+							}
+							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
+						}
+					}
+				}
+			};
+
+			Cell.prototype.drop = function(x,y,v){
+				if(v!==this.cln[x][y]){
+					this.universe[x][y]=v;
+					return true;
+				}
+				return false;
+			};
+
+//processes
+			Cell.prototype.dig = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+				}
+				if(val){
+					if(n+s+e+w===0){f.drop(x,y,0);}
+				} else {
+					if(n+s+e+w===4){f.drop(x,y,1);}
+					else if(n||s||e||w){
+						f.drop(x,y,f.choose(0,1,0.97));
+					}
+				}
+			};
+
+			Cell.prototype.smooth = function(val,x,y){
+				var f = this;
+				var n,s,e,w,ne,se,nw,sw = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+					ne = f.cln[x+1][y-1];
+					se = f.cln[x+1][y+1];
+					nw = f.cln[x-1][y-1];
+					sw = f.cln[x-1][y+1];
+				}
+				if(val){
+					if(n+ne+e+se+s===0){f.drop(x,y,0);}
+					if(n+nw+w+sw+s===0){f.drop(x,y,0);}
+					if(w+nw+n+ne+e===0){f.drop(x,y,0);}
+					if(w+sw+s+se+e===0){f.drop(x,y,0);}
+				} else {
+					if(n+ne+e+se+s===5){f.drop(x,y,1);}
+					if(n+nw+w+sw+s===5){f.drop(x,y,1);}
+					if(w+nw+n+ne+e===5){f.drop(x,y,1);}
+					if(w+sw+s+se+e===5){f.drop(x,y,1);}
+				}
+			};
+
+			Cell.prototype.squash = function(val,x,y){
+				var f = this;
+				var n,s,e,w,ne,se,nw,sw = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+					ne = f.cln[x+1][y-1];
+					se = f.cln[x+1][y+1];
+					nw = f.cln[x-1][y-1];
+					sw = f.cln[x-1][y+1];
+				}
+				if(val){
+					if(n+s+e+w===0){f.drop(x,y,0);}
+					if(n===undefined||s===undefined||e===undefined||w===undefined){f.drop(x,y,0);}
+				} else {
+					if(n+s+e+w===4){f.drop(x,y,1);}
+				}
+			}
+
+			Cell.prototype.trace = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+				}
+				if(!val){
+					if(n||s||e||w){f.drop(x,y,2);}
+					if(n===undefined||s===undefined||e===undefined||w===undefined){f.drop(x,y,2);}
+				}
+			};
+
+			Cell.prototype.seedWater = function(val,x,y){
+				var f = this;
+				if(val===1)f.drop(x,y,f.choose(val,3,0.997));
+			};
+
+			Cell.prototype.waterFlow = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+				}
+				if(val===1){
+					if(n===3||s===3||e===3||w===3)f.drop(x,y,f.choose(val,3,0.8));
+				}
+			}
+
+			Cell.prototype.waterFill = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				if(x>0 && x<f.w-1 && y>0 && y<f.h-1){
+					n = f.cln[x][y-1];
+					s = f.cln[x][y+1];
+					e = f.cln[x+1][y];
+					w = f.cln[x-1][y];
+				}
+				if(n===3&&s===3&&e===3&&w===3)f.drop(x,y,3);
+				if(n===3&&s===3&&e===3)f.drop(x,y,3);
+				if(n===3&&s===3&&w===3)f.drop(x,y,3);
+				if(n===3&&e===3&&w===3)f.drop(x,y,3);
+				if(s===3&&e===3&&w===3)f.drop(x,y,3);
+			}
+
+//end processes
+
+			Cell.prototype.process = function(val,x,y){
+				this.current(val,x,y);
+			};
+			
+			Cell.prototype.clone = function(){
+				var me = this;
+				var cln = [];
+				var i,l = null;
+    			for(i = 0; i< me.w; i++) {
+					cln[i] = me.universe[i].slice(0);
+				}
+				return cln;
+			};
+
+			Cell.prototype.step = function(){
+				var f = this;
+				var x,y,val = null;
+				f.cln = f.clone();
+				for(x = 0; x < f.w; x++) {
+					for(y = 0; y < f.h; y++) {
+						val = f.cln[x][y];
+						f.process(val,x,y);
+					}
+				}
+			};
+			
+			Cell.prototype.initialise = function(){
+				var me = this;
+				me.generate();
+				me.draw();
+			};
+			
+			Cell.prototype.iterate = function(f){
+				f.step();
+				f.draw();
+			};
+			
+			var c = new Cell('canvas');
+			
+			var list = [
+				{t:100,f:c.dig},
+				{t:1,f:c.smooth},
+				{t:1,f:c.squash},
+				{t:0,f:c.trace},
+				{t:0,f:c.seedWater},
+				{t:10,f:c.waterFlow},
+				{t:10,f:c.waterFill},
+			];
+
+			var perform = function(l){
+				if(l<list.length){
+					var i = 0;
+					c.current = list[l].f;
+					var interval = window.setInterval(function(){
+						c.iterate(c);
+						i++;
+						if(i>list[l].t) {
+							clearInterval(interval);
+							perform(l+1);
+						}
+					}, 12);	
+				}
+			}
+
+			document.getElementById('do').onclick=function(){
+				c.initialise();
+				perform(0);
+			};
+
+		}());
+	</script>
+</body>
+</html>
