@@ -31,22 +31,30 @@
 		#gold {
 			color:yellow;
 		}
+		#moves {
+			color:white;
+		}
 	</style>
 </head>
 <body>
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
-		<div class="info"><div id="gold">0</div></div>
+		<div class="info"><div id="gold">0</div><div id="moves">0</div></div>
 	</div>
 	<script>
 		(function(){
 
 			var Score = {
 				gold:0,
+				moves:0,
 				addOneGold:function(){
 					this.gold+=1;
-					document.getElementById("gold").innerHTML=this.gold;
+					document.getElementById("gold").innerHTML=this.gold*10;
+				},
+				addOneMove:function(){
+					this.moves+=1;
+					document.getElementById("moves").innerHTML=this.moves;
 				}
 			};
 
@@ -309,19 +317,23 @@
 					Score.addOneGold();
 					f.drop(x,y,1);
 				};
+				var doMove = function(x,y){
+					Score.addOneMove();
+					f.x = x; f.y = y;
+				}
 				if(f.startAdded){
 					this.universe[f.x][f.y]=1;//clear where I am
 					if(key.keyCode===39){//right
-						if(f.universe[f.x+1][f.y]===1)f.x+=1;
+						if(f.universe[f.x+1][f.y]===1)doMove(f.x+1,f.y);
 						else if(f.universe[f.x+1][f.y]===7)doGold(f.x+1,f.y);
 					} else if (key.keyCode===40){//down
-						if(f.universe[f.x][f.y+1]===1)f.y+=1;
+						if(f.universe[f.x][f.y+1]===1)doMove(f.x,f.y+1);
 						else if(f.universe[f.x][f.y+1]===7)doGold(f.x,f.y+1);
 					} else if (key.keyCode===38){//up
-						if(f.universe[f.x][f.y-1]===1)f.y-=1;
+						if(f.universe[f.x][f.y-1]===1)doMove(f.x,f.y-1);
 						else if(f.universe[f.x][f.y-1]===7)doGold(f.x,f.y-1);
 					} else if (key.keyCode===37){//left
-						if(f.universe[f.x-1][f.y]===1)f.x-=1;
+						if(f.universe[f.x-1][f.y]===1)doMove(f.x-1,f.y);
 						else if(f.universe[f.x-1][f.y]===7)doGold(f.x-1,f.y);
 					} else if (key.charCode===100){
 						if(f.universe[f.x+1][f.y]!=1)f.explode(f.x+1,f.y);
