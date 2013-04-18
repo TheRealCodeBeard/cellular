@@ -28,15 +28,27 @@
 		.controls input{
 			width: 3em;
 		}
+		#gold {
+			color:yellow;
+		}
 	</style>
 </head>
 <body>
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+		<div class="info"><div id="gold">0</div></div>
 	</div>
 	<script>
 		(function(){
+
+			var Score = {
+				gold:0,
+				addOneGold:function(){
+					this.gold+=1;
+					document.getElementById("gold").innerHTML=this.gold;
+				}
+			};
 
 			var Cell = function(canvas_id){
 				var me = this;
@@ -51,6 +63,8 @@
 				me.red = 'rgb(255,0,0)';
 				me.green = 'rgb(0,255,0)';
 				me.blue = 'rgb(0,0,255)';
+				me.purple = 'rgb(255,0,255)';
+				me.yellow= 'rgb(240,240,0)';
 				me.gray = 'rgb(100,100,100)';
 			};
 		
@@ -84,6 +98,10 @@
 								me.ctx.fillStyle = me.red;
 							} else if(me.universe[j][i]===5){
 								me.ctx.fillStyle = me.green;
+							} else if(me.universe[j][i]===6){
+								me.ctx.fillStyle = me.purple;
+							} else if(me.universe[j][i]===7){
+								me.ctx.fillStyle = me.yellow
 							} else {
 								me.ctx.fillStyle = me.universe[j][i]?me.white:me.black;
 							}
@@ -106,8 +124,6 @@
 					console.log(x,y);
 				}
 			};
-
-//processes
 
 			Cell.prototype.getAdjascent = function(x,y,f){
 				var n,s,e,w,ne,se,nw,sw = null;
@@ -132,6 +148,8 @@
 					sw:sw,
 				};
 			};
+
+//processes
 
 			Cell.prototype.dig = function(val,x,y){
 				var f = this;
@@ -176,15 +194,25 @@
 			Cell.prototype.trace = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
-				if(!val){
+				var block = 2;
+				if(val){
+					if(adj.n!==0&&!adj.n){f.drop(x,y,block);}
+					if(adj.s!==0&&!adj.s){f.drop(x,y,block);}
+					if(adj.e!==0&&!adj.e){f.drop(x,y,block);}
+					if(adj.w!==0&&!adj.w){f.drop(x,y,block);}
+				} else {
 					if(adj.n===1||adj.s===1||adj.e===1||adj.w===1){f.drop(x,y,2);}
-					if(adj.n===null||adj.s===null||adj.e===null||adj.w===null){f.drop(x,y,2);}
 				}
 			};
 
 			Cell.prototype.seedWater = function(val,x,y){
 				var f = this;
 				if(val===1)f.drop(x,y,f.choose(val,3,0.997));
+			};
+
+			Cell.prototype.seedGold = function(val,x,y){
+				var f = this;
+				if(val===1)f.drop(x,y,f.choose(val,7,0.99));
 			};
 
 			Cell.prototype.waterFlow = function(val,x,y){
@@ -210,7 +238,7 @@
 				var f = this;
 				if(!f.startAdded){
 					if(val===1){
-						var choice = f.choose(1,4,0.9);
+						var choice = f.choose(1,4,0.999);
 						if(f.drop(x,y,choice) && choice===4){
 							f.startAdded=true;
 							f.x = x;
@@ -253,6 +281,7 @@
 				var me = this;
 				me.generate();
 				me.draw();
+				me.startAdded = false;
 			};
 			
 			Cell.prototype.iterate = function(f){
@@ -280,15 +309,31 @@
 					this.universe[f.x][f.y]=1;//clear where I am
 					if(key.keyCode===39){//right
 						if(f.universe[f.x+1][f.y]===1)f.x+=1;
+						else if(f.universe[f.x+1][f.y]===7){
+							Score.addOneGold();
+							f.drop(f.x+1,f.y,1);
+						}
 						if(f.x>f.w-1)f.x=f.w-1;
 					} else if (key.keyCode===40){//down
 						if(f.universe[f.x][f.y+1]===1)f.y+=1;
+						else if(f.universe[f.x][f.y+1]===7){
+							Score.addOneGold();
+							f.drop(f.x,f.y+1,1);
+						}
 						if(f.y>f.h-1)f.y=f.h-1;
 					} else if (key.keyCode===38){//up
 						if(f.universe[f.x][f.y-1]===1)f.y-=1;
+						else if(f.universe[f.x][f.y-1]===7){
+							Score.addOneGold();
+							f.drop(f.x,f.y-1,1);
+						}
 						if(f.y<0)f.y=0;
 					} else if (key.keyCode===37){//left
 						if(f.universe[f.x-1][f.y]===1)f.x-=1;
+						else if(f.universe[f.x-1][f.y]===7){
+							Score.addOneGold();
+							f.drop(f.x-1,f.y,1);
+						}
 						if(f.x<0)f.x=0;
 					} else if (key.charCode===100){
 						if(f.universe[f.x+1][f.y]!=1)f.explode(f.x+1,f.y);
@@ -310,26 +355,28 @@
 			
 			var list = [
 				{t:100,f:c.dig},
-				{t:1,f:c.smooth},
-				{t:1,f:c.squash},
-				{t:0,f:c.trace},
-				{t:0,f:c.seedWater},
+				{t:2,f:c.smooth},
+				{t:2,f:c.squash},
+				{t:1,f:c.trace},
+				{t:1,f:c.seedWater},
+				{t:1,f:c.seedGold},
 				{t:10,f:c.waterFlow},
 				{t:10,f:c.waterFill},
-				{t:0,f:c.addStart},
+				{t:1,f:c.addStart},
 			];
 
 			var perform = function(l){
+				var i = 1;
+				var interval = null;
 				if(l<list.length){
-					var i = 0;
 					c.current = list[l].f;
-					var interval = window.setInterval(function(){
+					interval = window.setInterval(function(){
 						c.iterate(c);
-						i++;
 						if(i>list[l].t) {
 							clearInterval(interval);
 							perform(l+1);
 						}
+						i++;
 					}, 12);	
 				}
 			}
