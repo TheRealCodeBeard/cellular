@@ -305,36 +305,24 @@
 			};
 
 			Cell.prototype.keypress = function(key,f){
+				var doGold = function(x,y){
+					Score.addOneGold();
+					f.drop(x,y,1);
+				};
 				if(f.startAdded){
 					this.universe[f.x][f.y]=1;//clear where I am
 					if(key.keyCode===39){//right
 						if(f.universe[f.x+1][f.y]===1)f.x+=1;
-						else if(f.universe[f.x+1][f.y]===7){
-							Score.addOneGold();
-							f.drop(f.x+1,f.y,1);
-						}
-						if(f.x>f.w-1)f.x=f.w-1;
+						else if(f.universe[f.x+1][f.y]===7)doGold(f.x+1,f.y);
 					} else if (key.keyCode===40){//down
 						if(f.universe[f.x][f.y+1]===1)f.y+=1;
-						else if(f.universe[f.x][f.y+1]===7){
-							Score.addOneGold();
-							f.drop(f.x,f.y+1,1);
-						}
-						if(f.y>f.h-1)f.y=f.h-1;
+						else if(f.universe[f.x][f.y+1]===7)doGold(f.x,f.y+1);
 					} else if (key.keyCode===38){//up
 						if(f.universe[f.x][f.y-1]===1)f.y-=1;
-						else if(f.universe[f.x][f.y-1]===7){
-							Score.addOneGold();
-							f.drop(f.x,f.y-1,1);
-						}
-						if(f.y<0)f.y=0;
+						else if(f.universe[f.x][f.y-1]===7)doGold(f.x,f.y-1);
 					} else if (key.keyCode===37){//left
 						if(f.universe[f.x-1][f.y]===1)f.x-=1;
-						else if(f.universe[f.x-1][f.y]===7){
-							Score.addOneGold();
-							f.drop(f.x-1,f.y,1);
-						}
-						if(f.x<0)f.x=0;
+						else if(f.universe[f.x-1][f.y]===7)doGold(f.x-1,f.y);
 					} else if (key.charCode===100){
 						if(f.universe[f.x+1][f.y]!=1)f.explode(f.x+1,f.y);
 					} else if (key.charCode===97){
@@ -346,6 +334,10 @@
 					} else {
 						console.log(key);
 					}
+					if(f.y>f.h-1)f.y=f.h-1;
+					else if(f.y<0)f.y=0;
+					if(f.x>f.w-1)f.x=f.w-1;
+					else if(f.x<0)f.x=0;
 					f.drop(f.x,f.y,4);
 					f.draw();
 				}
