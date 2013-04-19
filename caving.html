@@ -42,6 +42,14 @@
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
 		<div class="info"><div id="gold">0</div><div id="moves">0</div></div>
 	</div>
+    <script type="text/javascript" src="NoiseMachine.js"></script>
+    <script type="text/javascript">    
+
+      var sampler = new Sampler(44100,0.05);
+      var gold_noise = new Channel(sampler.interval,sampler.sampleRate,[sampler.high_a,sampler.g,sampler.c,sampler.a]);
+      var dig_noise = new Channel(sampler.interval,sampler.sampleRate,[sampler.noise]);
+
+  	</script>
 	<script>
 		(function(){
 
@@ -50,6 +58,7 @@
 				moves:0,
 				addOneGold:function(){
 					this.gold+=1;
+					gold_noise.start();
 					document.getElementById("gold").innerHTML=this.gold*10;
 				},
 				addOneMove:function(){
@@ -298,6 +307,7 @@
 			};
 
 			Cell.prototype.explode = function(x,y){
+				dig_noise.start();
 				var f = this;
 				var n = f.universe[x][y-1];
 				var s = f.universe[x][y+1];
