@@ -50,22 +50,25 @@
       var dig_noise = new Channel(sampler.interval,sampler.sampleRate,[sampler.noise]);
 
   	</script>
+  	<script type="text/javascript"> 
+
+		var Score = {
+			gold:0,
+			moves:0,
+			addOneGold:function(){
+				this.gold+=1;
+				gold_noise.start();
+				document.getElementById("gold").innerHTML=this.gold*10;
+			},
+			addOneMove:function(){
+				this.moves+=1;
+				document.getElementById("moves").innerHTML=this.moves;
+			}
+		};
+
+  	</script>
 	<script>
 		(function(){
-
-			var Score = {
-				gold:0,
-				moves:0,
-				addOneGold:function(){
-					this.gold+=1;
-					gold_noise.start();
-					document.getElementById("gold").innerHTML=this.gold*10;
-				},
-				addOneMove:function(){
-					this.moves+=1;
-					document.getElementById("moves").innerHTML=this.moves;
-				}
-			};
 
 			var Cell = function(canvas_id){
 				var me = this;
