@@ -100,6 +100,7 @@
 				me.purple = 'rgb(255,0,255)';
 				me.yellow= 'rgb(240,240,0)';
 				me.gray = 'rgb(100,100,100)';
+				me.hard = 'rgb(50,50,50)';
 			};
 		
 			Cell.prototype.choose = function(a,b,limit){
@@ -136,6 +137,8 @@
 								me.ctx.fillStyle = me.purple;
 							} else if(me.universe[j][i]===7){
 								me.ctx.fillStyle = me.yellow
+							} else if(me.universe[j][i]===8){
+								me.ctx.fillStyle = me.hard;
 							} else {
 								me.ctx.fillStyle = me.universe[j][i]?me.white:me.black;
 							}
@@ -228,12 +231,11 @@
 			Cell.prototype.trace = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
-				var block = 2;
 				if(val){
-					if(adj.n!==0&&!adj.n)f.drop(x,y,block);
-					if(adj.s!==0&&!adj.s)f.drop(x,y,block);
-					if(adj.e!==0&&!adj.e)f.drop(x,y,block);
-					if(adj.w!==0&&!adj.w)f.drop(x,y,block);
+					if(adj.n!==0&&!adj.n)f.drop(x,y,8);
+					if(adj.s!==0&&!adj.s)f.drop(x,y,8);
+					if(adj.e!==0&&!adj.e)f.drop(x,y,8);
+					if(adj.w!==0&&!adj.w)f.drop(x,y,8);
 					if(val!=7){
 						if((adj.n===2||adj.n===0)&&
 							(adj.s===2||adj.s===0)&&
@@ -241,7 +243,9 @@
 							(adj.w===2||adj.w===0))f.drop(x,y,0);
 					}
 				} else {
-					if(adj.n===1||adj.s===1||adj.e===1||adj.w===1){f.drop(x,y,2);}
+					if(val!=7){
+						if(adj.n===1||adj.s===1||adj.e===1||adj.w===1)f.drop(x,y,2);
+					}
 				}
 			};
 
