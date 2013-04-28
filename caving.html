@@ -100,7 +100,9 @@
 				me.purple = 'rgb(255,0,255)';
 				me.yellow= 'rgb(240,240,0)';
 				me.gray = 'rgb(100,100,100)';
-				me.hard = 'rgb(50,50,50px)';
+				me.hard = 'rgb(50,50,50)';
+				me.hidden = 'rgb(15,10,10)';
+				me.stone = 'rgb(80,80,80)'
 			};
 		
 			Cell.prototype.choose = function(a,b,limit){
@@ -119,28 +121,40 @@
 				}
 			};
 			
+			Cell.prototype.insideView = function(x,y,ax,ay){
+				var distance = 10;
+				var sq= function(x){return x*x;};
+				if(!x && !y) return true;
+				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
+				return measured<distance;
+			};
+
 			Cell.prototype.draw = function(){
 				var me = this;
 				if(me.ctx){
 					var wh=5;
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
-							if(me.universe[j][i]===2){
-								me.ctx.fillStyle = me.gray;
-							} else if(me.universe[j][i]===3){
-								me.ctx.fillStyle = me.blue;
-							} else if(me.universe[j][i]===4){
-								me.ctx.fillStyle = me.red;
-							} else if(me.universe[j][i]===5){
-								me.ctx.fillStyle = me.green;
-							} else if(me.universe[j][i]===6){
-								me.ctx.fillStyle = me.purple;
-							} else if(me.universe[j][i]===7){
-								me.ctx.fillStyle = me.yellow
-							} else if(me.universe[j][i]===8){
-								me.ctx.fillStyle = me.hard;
+							if(me.insideView(me.x,me.y,j,i)){
+								if(me.universe[j][i]===2){
+									me.ctx.fillStyle = me.gray;
+								} else if(me.universe[j][i]===3){
+									me.ctx.fillStyle = me.blue;
+								} else if(me.universe[j][i]===4){
+									me.ctx.fillStyle = me.red;
+								} else if(me.universe[j][i]===5){
+									me.ctx.fillStyle = me.green;
+								} else if(me.universe[j][i]===6){
+									me.ctx.fillStyle = me.purple;
+								} else if(me.universe[j][i]===7){
+									me.ctx.fillStyle = me.yellow
+								} else if(me.universe[j][i]===8){
+									me.ctx.fillStyle = me.hard;
+								} else {
+									me.ctx.fillStyle = me.universe[j][i]?me.white:me.stone;
+								}
 							} else {
-								me.ctx.fillStyle = me.universe[j][i]?me.white:me.black;
+								me.ctx.fillStyle = me.hidden;
 							}
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
 						}
