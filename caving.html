@@ -151,10 +151,11 @@
 								} else if(me.universe[j][i]===8){
 									me.ctx.fillStyle = me.hard;
 								} else {
+									//can walls block vision?
 									me.ctx.fillStyle = me.universe[j][i]?me.white:me.stone;
 								}
 							} else {
-								me.ctx.fillStyle = me.hidden;
+								me.ctx.fillStyle = me.hidden;//would be nice to implement fog.
 							}
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
 						}
