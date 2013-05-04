@@ -76,32 +76,14 @@
       var dig_noise = new Channel(sampler.interval,sampler.sampleRate,[sampler.noise]);
 
   	</script>
-	<script type="text/javascript"> 
-		(function(){
-			var elements = [
-				document.getElementById('rocks'),
-				document.getElementById('gold'),
-				document.getElementById('leaves'),
-				document.getElementById('wood'),
-			];
-			var selected = elements[0];
-			var setSelected = function(el){
-				if(selected)selected.setAttribute('class','');
-				el.setAttribute('class','selected');
-				selected = el;
-			};
-			var addClick = function(item){
-				return function(el){
-					el.onclick = function(){
-						setSelected(el);
-					};
-				}(elements[i]);
-			};
-			for(var i = 0;i<elements.length;i++){addClick(i);}
-		}());
-
-  	</script>
   	<script type="text/javascript"> 
+
+  		var Drops = {
+  			gold:7,
+  			rocks:2,
+  			wood:5,
+  			leaves:6,
+  		};
 
 		var Score = {
 			gold:0,
@@ -109,34 +91,107 @@
 			rocks:0,
 			leaves:0,
 			wood:0,
+			current:null,
+			updateGold:function(){
+				document.getElementById("gold").innerHTML=this.gold;
+			},
 			addOneGold:function(){
 				this.gold+=10;
 				gold_noise.start();
-				document.getElementById("gold").innerHTML=this.gold;
+				this.updateGold();
+			},
+			//there needs to be a DROP one gold that drops 10, similarly with wood.
+			//then there is a spend N gold (and wood) for the shop
+			takeOne_gold:function(){
+				this.gold-=10;
+				this.updateGold();
+			},
+			updateLeaves:function(){
+				document.getElementById("leaves").innerHTML=this.leaves;
 			},
 			addOneLeaves:function(){
 				this.leaves+=1;
-				document.getElementById("leaves").innerHTML=this.leaves;
+				this.updateLeaves();
+			},
+			takeOne_leaves:function(){
+				this.leaves-=1;
+				this.updateLeaves();
+			},
+			updateWood:function(){
+				document.getElementById("wood").innerHTML=this.wood;
 			},
 			addOneWood:function(){
-				this.wood+=1;
-				document.getElementById("wood").innerHTML=this.wood;
+				this.wood+=5;
+				this.updateWood();
+			},
+			takeOne_wood:function(){
+				this.wood-=5;
+				this.updateWood();
 			},
 			addOneMove:function(){
 				this.moves+=1;
 				document.getElementById("moves").innerHTML=this.moves;
 			},
+			updateRocks:function(){
+				document.getElementById("rocks").innerHTML=this.rocks;
+			},
 			addOneRocks:function(){
 				this.rocks+=1;
 				dig_noise.start();
-				document.getElementById("rocks").innerHTML=this.rocks;
+				this.updateRocks();
 			},
-			takeOneRocks:function(){
+			takeOne_rocks:function(){
 				this.rocks-=1;
 				dig_noise.start();
-				document.getElementById("rocks").innerHTML=this.rocks;
+				this.updateRocks();
+			},
+			selectedTake:null,
+			setSelectedTake:function(selected,which){
+				this.current = which;
+				this.selectedTake = selected;
+			},
+			haveCurrent:function(){
+				if(this.current){
+					return this[this.current];
+				}
+				return false;
+			},
+			getTake:function(which){
+				return this["takeOne_"+which];
+			},
+			take:function(){
+				if(this.selectedTake) this.selectedTake();
 			}
 		};
+
+  	</script>
+  	<script type="text/javascript"> 
+		(function(){
+			var elements = [
+				'rocks',
+				'gold',
+				'leaves',
+				'wood',
+			];
+			var rocks = elements[0];
+			var selected = document.getElementById(rocks);
+			Score.setSelectedTake(Score.getTake(rocks),rocks);
+			var setSelected = function(el){
+				if(selected)selected.setAttribute('class','');
+				el.setAttribute('class','selected');
+				selected = el;
+			};
+			var addClick = function(item){
+				return function(el){
+					var element = document.getElementById(el);
+					element.onclick = function(){
+						setSelected(element);
+						Score.setSelectedTake(Score.getTake(el),el);
+					};
+				}(elements[i]);
+			};
+			for(var i = 0;i<elements.length;i++){addClick(i);}
+		}());
 
   	</script>
 	<script>
@@ -150,6 +205,7 @@
 				me.w=60;
 				me.h=60;
 				me.cln = null;
+				//move colours to drops object
 				me.black = 'rgb(0,0,0)';
 				me.white = 'rgb(255,255,255)';
 				me.dark_white = 'rgb(200,200,200)';
@@ -194,6 +250,7 @@
 				return measured;
 			};
 
+			//move colour selection to drops.
 			Cell.prototype.getColour = function(i,j){
 				var me = this;
 				var view = 10;
@@ -451,9 +508,10 @@
 				} else if (f.universe[x][y]===6){
 					f.drop(x,y,1);
 					Score.addOneLeaves();
-				} else if (f.universe[x][y]===1 && Score.rocks>0){
-					f.drop(x,y,2);
-					Score.takeOneRocks();
+				} else if (f.universe[x][y]===1 && Score.haveCurrent()){
+					//should move 'current' to Drops, not score.
+					f.drop(x,y,Drops[Score.current]);
+					Score.take();
 				}
 				f.current = f.trace;
 				f.step();
