@@ -37,13 +37,19 @@
 		#rocks {
 			color:gray;
 		}
+		#leaves {
+			color:green;
+		}
+		#wood {
+			color:brown;
+		}
 	</style>
 </head>
 <body>
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
-		<div class="info"><span id="gold">0</span><span id="rocks">0</span><span id="moves">0</span></div>
+		<div class="info"><span id="gold">0</span><span id="rocks">0</span><span id="leaves">0</span><span id="wood">0</span><span id="moves">0</span></div>
 	</div>
     <script type="text/javascript" src="NoiseMachine.js"></script>
     <script type="text/javascript">    
@@ -59,10 +65,20 @@
 			gold:0,
 			moves:0,
 			rocks:0,
+			leaves:0,
+			wood:0,
 			addOneGold:function(){
-				this.gold+=1;
+				this.gold+=10;
 				gold_noise.start();
-				document.getElementById("gold").innerHTML=this.gold*10;
+				document.getElementById("gold").innerHTML=this.gold;
+			},
+			addOneLeaves:function(){
+				this.leaves+=1;
+				document.getElementById("leaves").innerHTML=this.leaves;
+			},
+			addOneWood:function(){
+				this.wood+=1;
+				document.getElementById("wood").innerHTML=this.wood;
 			},
 			addOneMove:function(){
 				this.moves+=1;
@@ -96,7 +112,10 @@
 				me.white = 'rgb(255,255,255)';
 				me.dark_white = 'rgb(200,200,200)';
 				me.red = 'rgb(255,0,0)';
-				me.green = 'rgb(0,255,0)';
+				me.green = 'rgb(0,200,0)';
+				me.dark_green = 'rgb(0,180,0)';
+				me.brown = 'rgb(160,82,45)';
+				me.dark_brown = 'rgb(139,69,19)';
 				me.blue = 'rgb(0,0,255)';
 				me.dark_blue = 'rgb(0,0,200)';
 				me.purple = 'rgb(255,0,255)';
@@ -148,9 +167,11 @@
 					} else if(me.universe[j][i]===4){
 						return me.red;
 					} else if(me.universe[j][i]===5){
-						return me.green;
+						if(dist>fog) return me.brown;
+						else return me.dark_brown;
 					} else if(me.universe[j][i]===6){
-						return me.purple;
+						if(dist>fog) return me.dark_green;
+						else return me.green;
 					} else if(me.universe[j][i]===7){
 						if(dist>fog) return me.dark_yellow;
 						else return me.yellow
@@ -279,9 +300,12 @@
 				}
 			};
 
+			Cell.prototype.seedTrees = function(val,x,y){
+				if(val===1)this.drop(x,y,this.choose(val,5,0.99));
+			};
+
 			Cell.prototype.seedWater = function(val,x,y){
-				var f = this;
-				if(val===1)f.drop(x,y,f.choose(val,3,0.997));
+				if(val===1)this.drop(x,y,this.choose(val,3,0.997));
 			};
 
 			Cell.prototype.seedGold = function(val,x,y){
@@ -294,6 +318,14 @@
 				var adj = f.getAdjascent(x,y,f);
 				if(val===1){
 					if(adj.n===3||adj.s===3||adj.e===3||adj.w===3)f.drop(x,y,f.choose(val,3,0.8));
+				}
+			};
+
+			Cell.prototype.treeGrow = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val===1){
+					if(adj.n===5||adj.s===5||adj.e===5||adj.w===5) f.drop(x,y,6);
 				}
 			};
 
@@ -371,6 +403,12 @@
 				} else if (f.universe[x][y]===2){
 					f.drop(x,y,1);
 					Score.addOneRocks();
+				} else if (f.universe[x][y]===5){
+					f.drop(x,y,1);
+					Score.addOneWood();
+				} else if (f.universe[x][y]===6){
+					f.drop(x,y,1);
+					Score.addOneLeaves();
 				} else if (f.universe[x][y]===1 && Score.rocks>0){
 					f.drop(x,y,2);
 					Score.takeOneRocks();
@@ -425,6 +463,8 @@
 				{t:1,f:c.seedGold},
 				{t:10,f:c.waterFlow},
 				{t:10,f:c.waterFill},
+				{t:1,f:c.seedTrees},
+				{t:1,f:c.treeGrow},
 				{t:1,f:c.addStart},
 			];
 
