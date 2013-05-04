@@ -94,15 +94,20 @@
 				me.cln = null;
 				me.black = 'rgb(0,0,0)';
 				me.white = 'rgb(255,255,255)';
+				me.dark_white = 'rgb(200,200,200)';
 				me.red = 'rgb(255,0,0)';
 				me.green = 'rgb(0,255,0)';
 				me.blue = 'rgb(0,0,255)';
+				me.dark_blue = 'rgb(0,0,200)';
 				me.purple = 'rgb(255,0,255)';
 				me.yellow= 'rgb(240,240,0)';
+				me.dark_yellow= 'rgb(200,200,0)';
 				me.gray = 'rgb(100,100,100)';
+				me.dark_gray = 'rgb(90,90,90)';
 				me.hard = 'rgb(50,50,50)';
 				me.hidden = 'rgb(15,10,10)';
 				me.stone = 'rgb(80,80,80)'
+				me.dark_stone = 'rgb(70,70,70)';
 			};
 		
 			Cell.prototype.choose = function(a,b,limit){
@@ -135,11 +140,13 @@
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
 							var dist = me.distanceFrom(me.x,me.y,j,i);
-							if(dist<10){//do a fade effect 
+							if(dist<10){
 								if(me.universe[j][i]===2){
-									me.ctx.fillStyle = me.gray;
+									if(dist>8.5) me.ctx.fillStyle = me.dark_gray; 
+									else me.ctx.fillStyle = me.gray;
 								} else if(me.universe[j][i]===3){
-									me.ctx.fillStyle = me.blue;
+									if(dist>8.5) me.ctx.fillStyle = me.dark_blue;
+									else me.ctx.fillStyle = me.blue;
 								} else if(me.universe[j][i]===4){
 									me.ctx.fillStyle = me.red;
 								} else if(me.universe[j][i]===5){
@@ -147,16 +154,18 @@
 								} else if(me.universe[j][i]===6){
 									me.ctx.fillStyle = me.purple;
 								} else if(me.universe[j][i]===7){
-									me.ctx.fillStyle = me.yellow
+									if(dist>8.5) me.ctx.fillStyle = me.dark_yellow;
+									else me.ctx.fillStyle = me.yellow
 								} else if(me.universe[j][i]===8){
 									me.ctx.fillStyle = me.hard;
 								} else {
 									//can walls block vision?
-									me.ctx.fillStyle = me.universe[j][i]?me.white:me.stone;
+									if(dist>8.5) me.ctx.fillStyle = me.universe[j][i]?me.dark_white:me.dark_stone;
+									else me.ctx.fillStyle = me.universe[j][i]?me.white:me.stone;
 								}
-								if(dist>8){
-									me.ctx.fillStyle = me.red;
-								}
+								//if(dist>8.5){//do a fade effect 
+								//	me.ctx.fillStyle = me.red;
+								//}
 							} else {
 								me.ctx.fillStyle = me.hidden;//would be nice to implement fog.
 							}
