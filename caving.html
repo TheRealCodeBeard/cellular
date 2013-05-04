@@ -121,12 +121,11 @@
 				}
 			};
 			
-			Cell.prototype.insideView = function(x,y,ax,ay){
-				var distance = 10;
+			Cell.prototype.distanceFrom = function(x,y,ax,ay){
 				var sq= function(x){return x*x;};
 				if(!x && !y) return true;
 				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
-				return measured<distance;
+				return measured;
 			};
 
 			Cell.prototype.draw = function(){
@@ -135,7 +134,8 @@
 					var wh=5;
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
-							if(me.insideView(me.x,me.y,j,i)){
+							var dist = me.distanceFrom(me.x,me.y,j,i);
+							if(dist<10){//do a fade effect 
 								if(me.universe[j][i]===2){
 									me.ctx.fillStyle = me.gray;
 								} else if(me.universe[j][i]===3){
@@ -153,6 +153,9 @@
 								} else {
 									//can walls block vision?
 									me.ctx.fillStyle = me.universe[j][i]?me.white:me.stone;
+								}
+								if(dist>8){
+									me.ctx.fillStyle = me.red;
 								}
 							} else {
 								me.ctx.fillStyle = me.hidden;//would be nice to implement fog.
