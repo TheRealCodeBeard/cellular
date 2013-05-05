@@ -287,7 +287,7 @@
 			Cell.prototype.getColour = function(element,inview,dark,seen){
 				if(inview){
 					return Colours.get(Elements.get(element),dark);
-				} else if(seen){
+				} else if(seen){//things that are not seen are set to something
 					if(Elements.get(element)==="gold") return Colours.get("stone",true);
 					else if(Elements.get(element)==="wood") return Colours.get("ground",true);
 					else if(Elements.get(element)==="leaves") return Colours.get("ground",true);
