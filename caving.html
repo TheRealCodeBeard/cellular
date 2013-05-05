@@ -126,7 +126,7 @@
   				return this[id];
   			}
   		};
-  		Elements.build();
+  		Elements.build();//makes a nice lookup
 
 		var Score = {
 			gold:0,
@@ -235,7 +235,6 @@
 			};
 			for(var i = 0;i<elements.length;i++){addClick(i);}
 		}());
-
   	</script>
 	<script>
 		(function(){
@@ -277,7 +276,7 @@
 				if(inview){
 					return Colours.get(Elements.get(element),dark);
 				} else {
-					return Colours.hidden;//would be nice to implement fog.
+					return Colours.hidden;//would be nice to implement fog as opposed to just hidden.
 				}
 			};
 
