@@ -263,6 +263,7 @@
 				var fog = 8.5;
 				var dist = me.distanceFrom(me.x,me.y,j,i);
 				if(dist<view){
+					//Should get rid of universe here. Pass in value to this function FROM universe.
 					if(me.universe[j][i]===Elements.rocks){
 						if(dist>fog) return Colours.dark_gray; 
 						else return Colours.gray;
