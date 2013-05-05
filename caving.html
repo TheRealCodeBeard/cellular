@@ -95,7 +95,9 @@
 			rocks 		: 'rgb(100,100,100)',
 			dark_rocks 	: 'rgb(90,90,90)',
 			hard 		: 'rgb(50,50,50)',
+			dark_hard 	: 'rgb(40,40,40)',
 			hidden 		: 'rgb(15,10,10)',
+			dark_hidden : 'rgb(10,5,5)',
 			stone 		: 'rgb(80,80,80)',
 			dark_stone 	: 'rgb(70,70,70)',
 			get:function(name,dark){
@@ -244,6 +246,7 @@
 				var canvas = document.getElementById(canvas_id);
 				me.ctx = canvas.getContext('2d');
 				me.universe=null;
+				me.seen = null;
 				me.w=60;
 				me.h=60;
 				me.cln = null;
@@ -256,11 +259,14 @@
 			Cell.prototype.generate = function(){
 				var f = this;
 				var v = document.getElementById('chance').value;
-				f.universe=[];
+				f.universe = [];
+				f.seen = [];
 				for(var i = 0; i < f.w; i++) {
 					f.universe[i] = [];
+					f.seen[i] = [];
 					for(var j = 0; j < f.h; j++) {
 						f.universe[i][j] = f.choose(0,1,v);
+						f.seen[i][j] = false;
 					}
 				}
 			};
@@ -272,11 +278,14 @@
 				return measured;
 			};
 
-			Cell.prototype.getColour = function(element,inview,dark){
+			Cell.prototype.getColour = function(element,inview,dark,seen){
 				if(inview){
 					return Colours.get(Elements.get(element),dark);
+				} else if(seen){
+					if(Elements.get(element)==="gold") return Colours.get("stone",true);
+					else return Colours.get(Elements.get(element),true);
 				} else {
-					return Colours.hidden;//would be nice to implement fog as opposed to just hidden.
+					return Colours.hidden;
 				}
 			};
 
@@ -289,7 +298,8 @@
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
 							var dist = me.distanceFrom(me.x,me.y,j,i);
-							me.ctx.fillStyle = me.getColour(me.universe[j][i],dist<view,dist>fog);
+							me.ctx.fillStyle = me.getColour(me.universe[j][i],dist<view,dist>fog,me.seen[i][j]);
+							if(me.x && me.y) me.seen[i][j] = me.seen[i][j]||dist<view;
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
 						}
 					}
