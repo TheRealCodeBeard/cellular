@@ -141,6 +141,19 @@
 			leaves:0,
 			wood:0,
 			current:null,
+			reset:function(){
+				this.gold = 0;
+				this.updateGold();
+				this.moves = 0;
+				this.updateMoves();
+				this.rocks = 0;
+				this.updateRocks();
+				this.leaves = 0;
+				this.updateLeaves();
+				this.wood = 0;
+				this.updateWood();
+				this.current = null;
+			},
 			updateGold:function(){
 				document.getElementById("gold").innerHTML=this.gold;
 			},
@@ -184,6 +197,9 @@
 			},
 			addOneMove:function(){
 				this.moves+=1;
+				this.updateMoves();
+			},
+			updateMoves:function(){
 				document.getElementById("moves").innerHTML=this.moves;
 			},
 			updateRocks:function(){
@@ -622,6 +638,7 @@
 			};
 
 			document.getElementById('do').onclick=function(){
+				Score.reset();
 				c.initialise();
 				perform(0);
 			};
