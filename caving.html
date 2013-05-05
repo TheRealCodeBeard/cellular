@@ -59,13 +59,16 @@
 		#wood {
 			color:brown;
 		}
+		#seen,.whiteText {
+			color:white;
+		}
 	</style>
 </head>
 <body>
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
-		<div><span id="moves">0</span></div>
+		<div class="whiteText"><span id="moves">0</span> - <span id="seen">0</span>%</div>
 		<div class="info"><span id="gold">0</span><span class="selected" id="rocks">0</span><span id="leaves">0</span><span id="wood">0</span></div>
 	</div>
     <script type="text/javascript" src="NoiseMachine.js"></script>
@@ -206,6 +209,9 @@
 			},
 			take:function(){
 				if(this.selectedTake) this.selectedTake();
+			},
+			setSeen:function(percentage){
+				document.getElementById("seen").innerHTML=percentage;
 			}
 		};
 
@@ -283,10 +289,24 @@
 					return Colours.get(Elements.get(element),dark);
 				} else if(seen){
 					if(Elements.get(element)==="gold") return Colours.get("stone",true);
+					else if(Elements.get(element)==="wood") return Colours.get("ground",true);
+					else if(Elements.get(element)==="leaves") return Colours.get("ground",true);
 					else return Colours.get(Elements.get(element),true);
 				} else {
 					return Colours.hidden;
 				}
+			};
+
+			Cell.prototype.calculateSeen = function(){
+				var me = this;
+				var all = me.w*me.h;
+				var total = 0;
+				for(var i = 0; i < me.w; i++) {
+					for(var j = 0; j < me.h; j++) {
+						if(me.seen[i][j])total++;
+					}
+				}
+				Score.setSeen(Math.round((total/all)*100));
 			};
 
 			Cell.prototype.draw = function(){
@@ -304,6 +324,7 @@
 						}
 					}
 				}
+				me.calculateSeen();
 			};
 
 			Cell.prototype.drop = function(x,y,v){
