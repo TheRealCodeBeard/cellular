@@ -80,27 +80,32 @@
 
   		var Colours = {
 			black 		: 'rgb(0,0,0)',
-			white 		: 'rgb(255,255,255)',
-			dark_white 	: 'rgb(200,200,200)',
-			red 		: 'rgb(255,0,0)',
-			green 		: 'rgb(0,200,0)',
-			dark_green 	: 'rgb(0,180,0)',
-			brown 		: 'rgb(160,82,45)',
-			dark_brown 	: 'rgb(139,69,19)',
-			blue 		: 'rgb(0,0,255)',
-			dark_blue 	: 'rgb(0,0,200)',
+			ground 		: 'rgb(255,255,255)',
+			dark_ground : 'rgb(200,200,200)',
+			player 		: 'rgb(255,0,0)',
+			leaves		: 'rgb(0,200,0)',
+			dark_leaves	: 'rgb(0,180,0)',
+			wood 		: 'rgb(160,82,45)',
+			dark_wood 	: 'rgb(139,69,19)',
+			water 		: 'rgb(0,0,255)',
+			dark_water 	: 'rgb(0,0,200)',
 			purple 		: 'rgb(255,0,255)',
-			yellow 		: 'rgb(240,240,0)',
-			dark_yellow : 'rgb(200,200,0)',
-			gray 		: 'rgb(100,100,100)',
-			dark_gray 	: 'rgb(90,90,90)',
+			gold 		: 'rgb(240,240,0)',
+			dark_gold	: 'rgb(200,200,0)',
+			rocks 		: 'rgb(100,100,100)',
+			dark_rocks 	: 'rgb(90,90,90)',
 			hard 		: 'rgb(50,50,50)',
 			hidden 		: 'rgb(15,10,10)',
 			stone 		: 'rgb(80,80,80)',
 			dark_stone 	: 'rgb(70,70,70)',
+			get:function(name,dark){
+				if(dark)return this["dark_"+name];
+				else return this[name];
+			}
   		};
 
   		var Elements = {
+  			stone:0,
   			ground:1,
   			rocks:2,
   			water:3,
@@ -109,7 +114,19 @@
   			leaves:6,
   			gold:7,
   			hard:8,
+  			hidden:9,
+  			build:function(){
+  				for(var el in this){
+  					if(isNaN(el)){
+  						this[this[el]]=el;
+  					}
+	  			}
+  			},
+  			get:function(id){
+  				return this[id];
+  			}
   		};
+  		Elements.build();
 
 		var Score = {
 			gold:0,
@@ -256,37 +273,9 @@
 				return measured;
 			};
 
-			//move colour selection to drops.
-			Cell.prototype.getColour = function(i,j){
-				var me = this;
-				var view = 10;
-				var fog = 8.5;
-				var dist = me.distanceFrom(me.x,me.y,j,i);
-				if(dist<view){
-					//Should get rid of universe here. Pass in value to this function FROM universe.
-					if(me.universe[j][i]===Elements.rocks){
-						if(dist>fog) return Colours.dark_gray; 
-						else return Colours.gray;
-					} else if(me.universe[j][i]===Elements.water){
-						if(dist>fog) return Colours.dark_blue;
-						else return Colours.blue;
-					} else if(me.universe[j][i]===Elements.player){
-						return Colours.red;
-					} else if(me.universe[j][i]===Elements.wood){
-						if(dist>fog) return Colours.dark_brown;
-						else return Colours.brown;
-					} else if(me.universe[j][i]===Elements.leaves){
-						if(dist>fog) return Colours.dark_green;
-						else return Colours.green;
-					} else if(me.universe[j][i]===Elements.gold){
-						if(dist>fog) return Colours.dark_yellow;
-						else return Colours.yellow
-					} else if(me.universe[j][i]===Elements.hard){
-						return Colours.hard;
-					} else {//should walls block vision?
-						if(dist>fog) return me.universe[j][i]?Colours.dark_white:Colours.dark_stone;
-						else return me.universe[j][i]?Colours.white:Colours.stone;
-					}
+			Cell.prototype.getColour = function(element,inview,dark){
+				if(inview){
+					return Colours.get(Elements.get(element),dark);
 				} else {
 					return Colours.hidden;//would be nice to implement fog.
 				}
@@ -294,11 +283,14 @@
 
 			Cell.prototype.draw = function(){
 				var me = this;
+				var view = 10;
+				var fog = 8.5;				
 				if(me.ctx){
 					var wh=5;
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
-							me.ctx.fillStyle = me.getColour(i,j);
+							var dist = me.distanceFrom(me.x,me.y,j,i);
+							me.ctx.fillStyle = me.getColour(me.universe[j][i],dist<view,dist>fog);
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
 						}
 					}
@@ -491,6 +483,8 @@
 			
 			Cell.prototype.initialise = function(){
 				var me = this;
+				me.x=null;
+				me.y=null;
 				me.generate();
 				me.draw();
 				me.startAdded = false;
@@ -589,7 +583,7 @@
 						i++;
 					}, 12);	
 				}
-			}
+			};
 
 			document.getElementById('do').onclick=function(){
 				c.initialise();
