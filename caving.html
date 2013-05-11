@@ -30,11 +30,12 @@
 		}
 		.info {
 			color:white;
+			font-family: monospace;
 		}
 		.info span {
 			display: inline-block;
 			width:50px;
-			font-family: monospace;
+
 			border: solid 1px white;
 			cursor: pointer;
 			border-radius: 2px;
@@ -318,14 +319,16 @@
 				return measured;
 			};
 
-			Cell.prototype.getColour = function(element,inview,dark,seen){
+			Cell.prototype.getColour = function(element,inview,dark,seen,close){
+				var el = Elements.get(element);
 				if(inview){
-					return Colours.get(Elements.get(element),dark);
+					if(el==="gold" && !close) return Colours.get("stone",dark); 
+					return Colours.get(el,dark);
 				} else if(seen){//things that are not seen are set to something
-					if(Elements.get(element)==="gold") return Colours.get("stone",true);
-					else if(Elements.get(element)==="wood") return Colours.get("ground",true);
-					else if(Elements.get(element)==="leaves") return Colours.get("ground",true);
-					else return Colours.get(Elements.get(element),true);
+					if(el==="gold") return Colours.get("stone",true);
+					else if(el==="wood") return Colours.get("ground",true);
+					else if(el==="leaves") return Colours.get("ground",true);
+					else return Colours.get(el,true);
 				} else {
 					return Colours.hidden;
 				}
@@ -346,13 +349,14 @@
 			Cell.prototype.draw = function(){
 				var me = this;
 				var view = 10;
+				var close = 3;
 				var fog = 8.5;				
 				if(me.ctx){
 					var wh=5;
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
 							var dist = me.distanceFrom(me.x,me.y,j,i);
-							me.ctx.fillStyle = me.getColour(me.universe[j][i],dist<view,dist>fog,me.seen[i][j]);
+							me.ctx.fillStyle = me.getColour(me.universe[j][i],dist<view,dist>fog,me.seen[i][j],dist<close);
 							if(me.x && me.y) me.seen[i][j] = me.seen[i][j]||dist<view;
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
 						}
