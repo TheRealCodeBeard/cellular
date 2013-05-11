@@ -531,10 +531,13 @@
 			Cell.prototype.addSand = function(val,x,y){
 				var f = this;
 				var allAcceptable = function(v1,v2,v3){
+					var allSand = function(a,b,c){
+						return a===Elements.sand && b===Elements.sand && c ===Elements.sand;
+					};	
 					var isAcceptable = function(v){
 						return v===Elements.water || v===Elements.sand;
 					};
-					return isAcceptable(v1) && isAcceptable(v2) && isAcceptable(v3);
+					return isAcceptable(v1) && isAcceptable(v2) && isAcceptable(v3) && !allSand(v1,v2,v3);
 				};
 				if(val===Elements.ground){
 					var adj = f.getAdjascent(x,y,f);
@@ -637,7 +640,7 @@
 					f.x = x; f.y = y;
 				};
 				var canStep = function(v){
-					return v===Elements.ground || v===Elements.sand;
+					return v===Elements.ground || v===Elements.sand || v===Elements.leaves;
 				};
 				if(f.startAdded){
 					var code = key.keyCode;
