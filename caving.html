@@ -89,8 +89,8 @@
 
   		var Colours = {
 			black 		: 'rgb(0,0,0)',
-			ground 		: 'rgb(255,255,255)',
-			dark_ground : 'rgb(200,200,200)',
+			ground 		: 'rgb(245,222,179)',//255,255,255
+			dark_ground : 'rgb(222,184,135)',//200,200,200
 			player 		: 'rgb(255,0,0)',
 			leaves		: 'rgb(0,200,0)',
 			dark_leaves	: 'rgb(0,180,0)',
@@ -111,8 +111,8 @@
 			dark_hidden : 'rgb(10,5,5)',
 			stone 		: 'rgb(80,80,80)',
 			dark_stone 	: 'rgb(70,70,70)',
-			sand 		: 'rgb(237, 201, 175)',
-			dark_sand	: 'rgb(207, 171, 145)',
+			sand 		: 'rgb(222,184,135)',//255-239-213//237, 201, 175
+			dark_sand	: 'rgb(202,164,115)',//205-183-158//207, 171, 145
 			get:function(name,dark){
 				if(dark)return this["dark_"+name];
 				else return this[name];
