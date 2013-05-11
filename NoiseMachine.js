@@ -43,9 +43,11 @@ var Channel = function(speed,sampleRate,things){
   me.loop = false;
   me.buffer = [];
   var audio = new Audio();
-  audio.mozSetup(1, sampleRate);
-  me.play = function(i){ if(me.buffer[i]) audio.mozWriteAudio(me.buffer[i]); };
-  if(things) me.add(things);
+  if(audio.mozSetup){//otherwise just be quiet
+      audio.mozSetup(1, sampleRate);
+      me.play = function(i){ if(me.buffer[i]) audio.mozWriteAudio(me.buffer[i]); };
+      if(things) me.add(things);    
+  }
 };
 
 Channel.prototype.add = function(things){

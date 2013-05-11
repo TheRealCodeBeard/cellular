@@ -576,25 +576,26 @@
 					f.x = x; f.y = y;
 				}
 				if(f.startAdded){
+					var code = key.keyCode;
 					this.universe[f.x][f.y]=1;//clear where I am
-					if(key.keyCode===39){//right
+					if(code===39){//right
 						if(f.universe[f.x+1][f.y]===1)doMove(f.x+1,f.y);
-					} else if (key.keyCode===40){//down
+					} else if (code===40){//down
 						if(f.universe[f.x][f.y+1]===1)doMove(f.x,f.y+1);
-					} else if (key.keyCode===38){//up
+					} else if (code===38){//up
 						if(f.universe[f.x][f.y-1]===1)doMove(f.x,f.y-1);
-					} else if (key.keyCode===37){//left
+					} else if (code===37){//left
 						if(f.universe[f.x-1][f.y]===1)doMove(f.x-1,f.y);
-					} else if (key.charCode===100){
+					} else if (code===68){//d
 						f.dig(f.x+1,f.y);//dig right
-					} else if (key.charCode===97){
+					} else if (code===65){//a
 						f.dig(f.x-1,f.y);//dig left
-					} else if (key.charCode===119){
+					} else if (code===87){//w
 						f.dig(f.x,f.y-1);//dig up
-					} else if (key.charCode===115){
+					} else if (code===83){//s
 						f.dig(f.x,f.y+1);//dig down
 					} else {
-						console.log(key);
+						console.log(code);
 					}
 					if(f.y>f.h-1)f.y=f.h-1;
 					else if(f.y<0)f.y=0;
@@ -643,7 +644,20 @@
 				perform(0);
 			};
 
-			window.onkeypress = function(e){c.keypress(e,c);};
+			window.onkeypress = function(e){
+				//not fired for arrow keys in chrome. DUMB!
+				//console.log('key pressed');
+				//c.keypress(e,c);
+			};
+
+			window.onkeydown = function(e){
+				c.keypress(e,c);
+				//console.log('key down');
+			};
+
+			window.onkeyup = function(e){
+				//console.log('key up');
+			};
 
 		}());
 	</script>
