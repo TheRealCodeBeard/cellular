@@ -571,7 +571,7 @@
 			Cell.prototype.placeCastle = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
-				if(x>5 && x<(f.w * f.wh)-5 && y > 5 && y< (f.h * f.wh) -5)
+				if(x>10 && x<(f.w * f.wh)-10 && y > 10 && y< (f.h * f.wh) - 10)
 				{
 					var isCastleGround = function(val){
 						return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
@@ -710,9 +710,7 @@
 						}
 						i++;
 					}, 12);	
-				} /*else {
-					name();
-				}*/
+				}
 			};
 
 			document.getElementById('do').onclick=function(){
