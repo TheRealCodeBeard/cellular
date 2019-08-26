@@ -255,9 +255,9 @@
 				if(val){
 					if(adj.n+adj.s+adj.e+adj.w===Elements.stone){f.drop(x,y,Elements.stone);}
 				} else {
-					if(adj.n+adj.s+adj.e+adj.w===4){f.drop(x,y,1);}
+					if(adj.n+adj.s+adj.e+adj.w===Elements.player){f.drop(x,y,Elements.ground);}
 					else if(adj.n||adj.s||adj.e||adj.w){
-						f.drop(x,y,f.choose(0,1,0.97));
+						f.drop(x,y,f.choose(Elements.stone,Elements.ground,0.97));
 					}
 				}
 			};
