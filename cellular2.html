@@ -8,6 +8,17 @@
 		{
 			border:solid 2px maroon;
 		}
+		#name
+		{
+			color:black;
+			background-color: white;
+			margin:2px;
+			border:solid 1px grey;
+			display:block;
+			font-family: sans-serif;
+			width:50%;
+			margin-left:25%;
+		}
 		body
 		{
 			background-color:black;
@@ -84,7 +95,8 @@
 <body>
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
-		<canvas id="canvas" width="400" height="400" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+		<canvas id="canvas" width="400" height="400">Your browser doesn't support HTML5 Canvas.</canvas>
+		<span id="name"></span>
 	</div>
   	<script type="text/javascript"> 
 
@@ -244,6 +256,21 @@
 					se:se,
 					nw:nw,
 					sw:sw,
+					nsewAll:function(element){
+						return 	n === element &&
+								s === element &&
+								e === element &&
+								w === element; 
+					},
+					nesenwswAll:function(element){
+						return 	ne === element &&
+								se === element &&
+								nw === element &&
+								sw === element; 
+					},
+					areAll:function(element){
+						return nsewAll(element) && nesenwswAll(element);
+					}
 				};
 			};
 
@@ -253,7 +280,8 @@
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
 				if(val){
-					if(adj.n+adj.s+adj.e+adj.w===Elements.stone){f.drop(x,y,Elements.stone);}
+					//if(adj.n+adj.s+adj.e+adj.w===Elements.stone){f.drop(x,y,Elements.stone);}
+					if(adj.nsewAll(Elements.stone)){f.drop(x,y,Elements.stone);}
 				} else {
 					if(adj.n+adj.s+adj.e+adj.w===Elements.player){f.drop(x,y,Elements.ground);}
 					else if(adj.n||adj.s||adj.e||adj.w){
@@ -610,6 +638,21 @@
 				//{t:1,f:c.placeCastle}
 			];
 
+			var name = function(){
+				var starts = ["Vos","Cal","Bra","La", "Le", "Fra","Min","El","Porto-","High-"];
+				var mids = ["cos","bra","ma","ka","bro","ich","lo","si","se","fro","klo","gra","pre", "pun"];
+				var ends = ["nova","land","noc"," landing","sia","po","mra","tak"," water"," machi", "grad", "scotia", "helm", " Sword", "-yama"];
+				var pick_start = Math.round(Math.random()*(starts.length-1));
+				var pick_mid = Math.round(Math.random()*(mids.length-1));
+				var pick_end = Math.round(Math.random()*(ends.length-1));
+				var landname = "" + starts[pick_start] + mids[pick_mid] + ends[pick_end];
+				document.getElementById('name').innerHTML=landname;
+			};
+
+			var clearName = function(){
+				document.getElementById('name').innerHTML="...building"
+			};
+
 			var perform = function(l){
 				var i = 1;
 				var interval = null;
@@ -623,10 +666,13 @@
 						}
 						i++;
 					}, 12);	
-				}			
+				} else {
+					name();
+				}	
 			};
 
 			document.getElementById('do').onclick=function(){
+				clearName();
 				c.initialise();
 				perform(0);
 			};
