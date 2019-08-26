@@ -270,6 +270,9 @@
 					},
 					areAll:function(element){
 						return nsewAll(element) && nesenwswAll(element);
+					},
+					anyNsewNotNull:function(){
+						return 	n || s || e || w ;
 					}
 				};
 			};
@@ -280,11 +283,9 @@
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
 				if(val){
-					//if(adj.n+adj.s+adj.e+adj.w===Elements.stone){f.drop(x,y,Elements.stone);}
 					if(adj.nsewAll(Elements.stone)){f.drop(x,y,Elements.stone);}
 				} else {
-					if(adj.n+adj.s+adj.e+adj.w===Elements.player){f.drop(x,y,Elements.ground);}
-					else if(adj.n||adj.s||adj.e||adj.w){
+					if(adj.anyNsewNotNull(Element.stone)){
 						f.drop(x,y,f.choose(Elements.stone,Elements.ground,0.97));
 					}
 				}
@@ -639,9 +640,9 @@
 			];
 
 			var name = function(){
-				var starts = ["Vos","Cal","Bra","La", "Le", "Fra","Min","El","Porto-","High-"];
-				var mids = ["cos","bra","ma","ka","bro","ich","lo","si","se","fro","klo","gra","pre", "pun"];
-				var ends = ["nova","land","noc"," landing","sia","po","mra","tak"," water"," machi", "grad", "scotia", "helm", " Sword", "-yama"];
+				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Porto-","High-", "Co", "Chri", "Saint-"];
+				var mids = ["cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", "pun", "krel","kun","bo","hehe", "hoho", ""];
+				var ends = ["nova","land","noc"," landing","sia","po","mra","tak"," water"," machi", "grad", "scotia", "helm","man", " Sword", "-yama"];
 				var pick_start = Math.round(Math.random()*(starts.length-1));
 				var pick_mid = Math.round(Math.random()*(mids.length-1));
 				var pick_end = Math.round(Math.random()*(ends.length-1));
