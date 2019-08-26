@@ -10,19 +10,14 @@
 		}
 		#name
 		{
-			color:black;
-			background-color: white;
-			margin:2px;
-			border:solid 1px grey;
-			display:block;
-			font-family: sans-serif;
-			width:50%;
-			margin-left:25%;
-			padding:5px;
+			width:100px;
+			margin-left:10px;
 		}
-		#mynamelabel
+		#gen
 		{
 			color:white;
+			font-family: monospace;
+			vertical-align: -5px;
 		}
 		body
 		{
@@ -44,66 +39,15 @@
 		.controls input{
 			width: 3em;
 		}
-		#seen,.whiteText,.info,.movement {
-			color:white;
-			font-family: monospace;
-		}
-		.whiteText {
-			margin-bottom: 3px;
-		}
-		.movement {
-			margin-bottom: 3px;
-		}
-		.movement span{
-			display:inline-block;
-			width:25px;
-			cursor: pointer;
-			border: solid 1px white;
-		}
-		.movement span:active{
-			background-color: white;
-			color:black;
-		}
-		.info span {
-			display: inline-block;
-			width:50px;
-			border: solid 1px white;
-			cursor: pointer;
-			border-radius: 2px;
-			margin: 0 4px;
-		}
-		.info span.selected{
-			background-color: #555;
-			-webkit-transform: rotate(5deg); 
-			-moz-transform: rotate(5deg); 
-			-o-transform: rotate(5deg);
-			-ms-transform: rotate(5deg);
-			transform:rotate(5deg);
-		}
-		#gold {
-			color:yellow;
-		}
-		#moves {
-			color:red;
-		}
-		#rocks {
-			color:gray;
-		}
-		#leaves {
-			color:green;
-		}
-		#wood {
-			color:brown;
-		}
 	</style>
 </head>
 <body>
 	<div class='holder'>
-		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
-		<canvas id="canvas" width="400" height="400">Your browser doesn't support HTML5 Canvas.</canvas>
-		<div>
-			<input type="checkbox" id="myname" text="use my name"><label id="mynamelabel">use my name</label><input type="text" id="name"/></span>
+		<div class="controls">
+			<input type="text" id="chance" value="0.92"/> <button id="do">Generate</button>
+			<input type="text" id="name"/><input type="checkbox" id="generate" text="generate name"><label id="gen">generate name</label>
 		</div>
+		<canvas id="canvas" width="400" height="400">Your browser doesn't support HTML5 Canvas.</canvas>
 	</div>
 	<script src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
@@ -714,7 +658,7 @@
 			};
 
 			document.getElementById('do').onclick=function(){
-				if(!document.getElementById('myname').checked){
+				if(document.getElementById('generate').checked){
 					clearName();
 					name();
 				};
