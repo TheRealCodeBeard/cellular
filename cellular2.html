@@ -20,6 +20,10 @@
 			margin-left:25%;
 			padding:5px;
 		}
+		#mynamelabel
+		{
+			color:white;
+		}
 		body
 		{
 			background-color:black;
@@ -97,7 +101,9 @@
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="400" height="400">Your browser doesn't support HTML5 Canvas.</canvas>
-		<input type="text" id="name"></span>
+		<div>
+			<input type="checkbox" id="myname" text="use my name"><label id="mynamelabel">use my name</label><input type="text" id="name"/></span>
+		</div>
 	</div>
 	<script src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
@@ -169,8 +175,6 @@
   	</script>
 	<script>
 		(function(){
-			Math.seedrandom('hello');
-			console.log(Math.random());
 
 			var Cell = function(canvas_id){
 				var me = this;
@@ -706,13 +710,17 @@
 						}
 						i++;
 					}, 12);	
-				} else {
+				} /*else {
 					name();
-				}	
+				}*/
 			};
 
 			document.getElementById('do').onclick=function(){
-				clearName();
+				if(!document.getElementById('myname').checked){
+					clearName();
+					name();
+				};
+				Math.seedrandom(document.getElementById('name').value);
 				c.initialise();
 				perform(0);
 			};
