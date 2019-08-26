@@ -10,10 +10,12 @@
 		}
 		#name
 		{
-			width:100px;
+			width:275px;
 			margin-left:10px;
+			font-size: 20px;
+			text-align: center;
 		}
-		#gen
+		#gen,#rock
 		{
 			color:white;
 			font-family: monospace;
@@ -43,11 +45,17 @@
 </head>
 <body>
 	<div class='holder'>
+		<canvas id="canvas" width="500" height="500">Your browser doesn't support HTML5 Canvas.</canvas>
 		<div class="controls">
-			<input type="text" id="chance" value="0.92"/> <button id="do">Generate</button>
-			<input type="text" id="name"/><input type="checkbox" id="generate" text="generate name"><label id="gen">generate name</label>
+				<input type="text" id="name"/>
+				<input type="checkbox" id="generate">
+				<label id="gen">make name</label>
 		</div>
-		<canvas id="canvas" width="400" height="400">Your browser doesn't support HTML5 Canvas.</canvas>
+		<div class="controls">
+				<label id="rock">rockiness:</label>
+				<input type="text" id="chance" value="0.92"/> 		
+				<button id="do">Generate</button>
+		</div>
 	</div>
 	<script src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
@@ -627,9 +635,9 @@
 			];
 
 			var name = function(){
-				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Porto-","High-", "Co", "Chri", "Saint-"];
-				var mids = ["cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", "pun", "krel","kun","bo","hehe", "hoho", ""];
-				var ends = ["nova","land","noc"," landing","sia","po","mra","tak"," water"," machi", "grad", "scotia", "helm","man", " Sword", "-yama"];
+				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Porto-","High-", "Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-","Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late"];
+				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", "pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf"];
+				var ends = ["nova","land","noc"," landing","sia","po","mra","mouth","tak"," water"," machi", "grad", "scotia", "helm","man", " sword", "-yama","-bluff", "wold"," shadow"," farm", " willow", " mura", "naka"];
 				var pick_start = Math.round(Math.random()*(starts.length-1));
 				var pick_mid = Math.round(Math.random()*(mids.length-1));
 				var pick_end = Math.round(Math.random()*(ends.length-1));
