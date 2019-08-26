@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Map Generator</title>
+	<meta charset="UTF-8">
+	<style type="text/css">
+		#canvas
+		{
+			border:solid 2px maroon;
+		}
+		body
+		{
+			background-color:black;
+		}
+		.holder
+		{
+			padding-top:50px;
+			text-align:center;
+		}
+		.controls{
+			margin-bottom: 5px;
+		}
+		.controls input,.controls button{
+			border:solid 1px gray;
+			font-family: monospace;
+			vertical-align: -5px;
+		}
+		.controls input{
+			width: 3em;
+		}
+		#seen,.whiteText,.info,.movement {
+			color:white;
+			font-family: monospace;
+		}
+		.whiteText {
+			margin-bottom: 3px;
+		}
+		.movement {
+			margin-bottom: 3px;
+		}
+		.movement span{
+			display:inline-block;
+			width:25px;
+			cursor: pointer;
+			border: solid 1px white;
+		}
+		.movement span:active{
+			background-color: white;
+			color:black;
+		}
+		.info span {
+			display: inline-block;
+			width:50px;
+			border: solid 1px white;
+			cursor: pointer;
+			border-radius: 2px;
+			margin: 0 4px;
+		}
+		.info span.selected{
+			background-color: #555;
+			-webkit-transform: rotate(5deg); 
+			-moz-transform: rotate(5deg); 
+			-o-transform: rotate(5deg);
+			-ms-transform: rotate(5deg);
+			transform:rotate(5deg);
+		}
+		#gold {
+			color:yellow;
+		}
+		#moves {
+			color:red;
+		}
+		#rocks {
+			color:gray;
+		}
+		#leaves {
+			color:green;
+		}
+		#wood {
+			color:brown;
+		}
+	</style>
+</head>
+<body>
+	<div class='holder'>
+		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
+		<canvas id="canvas" width="500" height="500" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+	</div>
+  	<script type="text/javascript"> 
+
+  		var Colours = {
+			black 		: 'rgb(0,0,0)',
+			ground 		: 'rgb(245,222,179)',//255,255,255
+			player 		: 'rgb(255,0,0)',
+			leaves		: 'rgb(0,230,0)',
+			grass		: 'rgb(0,150,0)',
+			thickgrass	: 'rgb(0,140,0)',
+			wood 		: 'rgb(160,82,45)',
+			water 		: 'rgb(0,0,255)',
+			deepwater	: 'rgb(0,0,200)',
+			purple 		: 'rgb(255,0,255)',
+			gold 		: 'rgb(240,240,0)',
+			rocks 		: 'rgb(100,100,100)',
+			hard 		: 'rgb(50,50,50)',
+			hidden 		: 'rgb(15,10,10)',
+			stone 		: 'rgb(80,80,80)',
+			highstone	: 'rgb(110,110,110)',
+			snow		: 'rgb(255,255,255)',
+			sand 		: 'rgb(222,184,135)',//255-239-213//237, 201, 175
+			castle		: 'rgb(215,192,169)',
+			wall		: 'rgb(70,50,70)',
+			tower		: 'rgb(40,10,40)',
+			moat 		: 'rgb(0,0,255)',
+			bridge 		: 'rgb(170,92,55)',
+			get:function(name){
+				return this[name];
+			}
+  		};
+
+  		var Elements = {
+  			stone:0,
+  			ground:1,
+  			rocks:2,
+  			water:3,
+  			player:4,
+  			wood:5,
+  			leaves:6,
+  			gold:7,
+  			hard:8,
+  			hidden:9,
+  			deepwater:10,
+  			sand:11,
+			grass:12,
+			thickgrass:13,
+			highstone:14,
+			snow:15,
+			castle:16,
+			wall:17,
+			tower:18,
+			moat:19,
+			bridge:20,
+  			build:function(){
+  				for(var el in this){
+  					if(isNaN(el)){
+  						this[this[el]]=el;
+  					}
+	  			}
+  			},
+  			get:function(id){
+  				return this[id];
+  			}
+  		};
+  		Elements.build();//makes a nice lookup
+
+  	</script>
+	<script>
+		(function(){
+
+			var Cell = function(canvas_id){
+				var me = this;
+				var canvas = document.getElementById(canvas_id);
+				me.ctx = canvas.getContext('2d');
+				me.universe=null;
+				me.wh = 5;
+				me.w=me.ctx.canvas.clientWidth/me.wh//60;
+				me.h=me.ctx.canvas.clientHeight/me.wh//60;
+				me.cln = null;
+			};
+		
+			Cell.prototype.choose = function(a,b,limit){
+				return (Math.random()< limit ? a : b);
+			};
+
+			Cell.prototype.generate = function(){
+				var f = this;
+				var v = document.getElementById('chance').value;
+				f.universe = [];
+				for(var i = 0; i < f.w; i++) {
+					f.universe[i] = [];
+					for(var j = 0; j < f.h; j++) {
+						f.universe[i][j] = f.choose(0,1,v);
+					}
+				}
+			};
+			
+			Cell.prototype.distanceFrom = function(x,y,ax,ay){
+				var sq= function(x){return x*x;};
+				if(!x && !y) return true;
+				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
+				return measured;
+			};
+
+			Cell.prototype.getColour = function(element){
+				var el = Elements.get(element);
+				return Colours.get(el);
+			};
+
+			Cell.prototype.draw = function(){
+				var me = this;				
+				if(me.ctx){
+					//var wh=5;//width of a drawn tile
+					var wh = me.wh;
+					for(var i = 0; i < me.w; i++) {
+						for(var j = 0; j < me.h; j++) {
+							me.ctx.fillStyle = me.getColour(me.universe[j][i]);
+							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
+						}
+					}
+				}
+			};
+
+			Cell.prototype.drop = function(x,y,v){
+				try{
+					if(v!==this.cln[x][y]){
+						this.universe[x][y]=v;
+						return true;
+					}
+					return false;
+				} catch(e) {
+					console.log('exception:',e);
+					console.log(x,y);
+					return false;
+				}
+			};
+
+			Cell.prototype.getAdjascent = function(x,y,f){
+				var n,s,e,w,ne,se,nw,sw = null;
+				if(y-1>=0) n = f.cln[x][y-1];
+				if(y+1<f.h) s = f.cln[x][y+1];
+				if(x+1<f.w) e = f.cln[x+1][y];
+				if(x-1>=0) w = f.cln[x-1][y];
+				
+				if(x+1<f.w && y-1>=0) ne =f.cln[x+1][y-1];
+				if(x+1<f.w && y+1<f.h) se =f.cln[x+1][y+1];
+				if(x-1>=0 && y-1>=0) nw =f.cln[x-1][y-1];
+				if(x-1>=0 && y+1<f.h) sw =f.cln[x-1][y+1];	
+
+				return {
+					n: n,
+					s: s,
+					e: e,
+					w: w,
+					ne:ne,
+					se:se,
+					nw:nw,
+					sw:sw,
+				};
+			};
+
+//processes
+
+			Cell.prototype.cave = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val){
+					if(adj.n+adj.s+adj.e+adj.w===Elements.stone){f.drop(x,y,Elements.stone);}
+				} else {
+					if(adj.n+adj.s+adj.e+adj.w===4){f.drop(x,y,1);}
+					else if(adj.n||adj.s||adj.e||adj.w){
+						f.drop(x,y,f.choose(0,1,0.97));
+					}
+				}
+			};
+
+			Cell.prototype.smooth = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val){
+					if(adj.n+adj.ne+adj.e+adj.se+adj.s===0){f.drop(x,y,0);}
+					if(adj.n+adj.nw+adj.w+adj.sw+adj.s===0){f.drop(x,y,0);}
+					if(adj.w+adj.nw+adj.n+adj.ne+adj.e===0){f.drop(x,y,0);}
+					if(adj.w+adj.sw+adj.s+adj.se+adj.e===0){f.drop(x,y,0);}
+				} else {
+					if(adj.n+adj.ne+adj.e+adj.se+adj.s===5){f.drop(x,y,1);}
+					if(adj.n+adj.nw+adj.w+adj.sw+adj.s===5){f.drop(x,y,1);}
+					if(adj.w+adj.nw+adj.n+adj.ne+adj.e===5){f.drop(x,y,1);}
+					if(adj.w+adj.sw+adj.s+adj.se+adj.e===5){f.drop(x,y,1);}
+				}
+			};
+
+			Cell.prototype.squash = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val){
+					if(adj.n+adj.s+adj.e+adj.w===0){f.drop(x,y,0);}
+					if(adj.n===null||adj.s===null||adj.e===null||adj.w===null){f.drop(x,y,0);}
+				} else {
+					if(adj.n+adj.s+adj.e+adj.w===4){f.drop(x,y,1);}
+				}
+			};
+
+			Cell.prototype.trace = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val){
+					if(adj.n!==0&&!adj.n)f.drop(x,y,8);
+					if(adj.s!==0&&!adj.s)f.drop(x,y,8);
+					if(adj.e!==0&&!adj.e)f.drop(x,y,8);
+					if(adj.w!==0&&!adj.w)f.drop(x,y,8);
+					if(val!=7){
+						if((adj.n===2||adj.n===0)&&
+							(adj.s===2||adj.s===0)&&
+							(adj.e===2||adj.e===0)&&
+							(adj.w===2||adj.w===0))f.drop(x,y,0);
+					}
+				} else {
+					if(val!=7){
+						if(adj.n===1||adj.s===1||adj.e===1||adj.w===1)f.drop(x,y,2);
+					}
+				}
+			};
+
+			Cell.prototype.higherMountain = function(val,x,y){
+				var f = this;
+				var isStone = function(v){
+					return v === Elements.stone||v===Elements.highstone;
+				};
+				if(isStone(val)){
+					var adj = f.getAdjascent(x,y,f);
+					if(isStone(adj.n)&&isStone(adj.s)&&isStone(adj.e)&&isStone(adj.w)
+						&&isStone(adj.nw)&&isStone(adj.ne)&&isStone(adj.se)&&isStone(adj.sw)){
+						f.drop(x,y,f.choose(val,Elements.highstone,0.7));
+					}
+				}
+			};
+
+			Cell.prototype.highFill = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				var adj = f.getAdjascent(x,y,f);
+				if(adj.n===Elements.highstone&&
+					adj.s===Elements.highstone&&
+					adj.e===Elements.highstone&&
+					adj.w===Elements.highstone)f.drop(x,y,Elements.highstone);
+				if(adj.n===Elements.highstone&&adj.s===Elements.highstone&&adj.e===Elements.highstone)f.drop(x,y,Elements.highstone);
+				if(adj.n===Elements.highstone&&adj.s===Elements.highstone&&adj.w===Elements.highstone)f.drop(x,y,Elements.highstone);
+				if(adj.n===Elements.highstone&&adj.e===Elements.highstone&&adj.w===Elements.highstone)f.drop(x,y,Elements.highstone);
+				if(adj.s===Elements.highstone&&adj.e===Elements.highstone&&adj.w===Elements.highstone)f.drop(x,y,Elements.highstone);
+			};
+
+			Cell.prototype.snowCap = function(val,x,y){
+				var f = this;
+				var isHigh = function(v){
+					return v===Elements.snow||v===Elements.highstone;
+				};
+				if(isHigh(val)){
+					var adj = f.getAdjascent(x,y,f);
+					if(isHigh(adj.n)&&isHigh(adj.s)&&isHigh(adj.e)&&isHigh(adj.w)
+						&&isHigh(adj.nw)&&isHigh(adj.ne)&&isHigh(adj.se)&&isHigh(adj.sw)){
+						f.drop(x,y,f.choose(val,Elements.snow,0.7));
+					}
+				}
+			};
+
+			Cell.prototype.seedTrees = function(val,x,y){
+				if(val===1)this.drop(x,y,this.choose(val,5,0.99));
+			};
+
+			Cell.prototype.treeGrow = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val===Elements.ground){
+					if(adj.n===Elements.wood||adj.s===Elements.wood
+						||adj.e===Elements.wood||adj.w===Elements.wood) f.drop(x,y,Elements.leaves);
+				}
+			};
+
+			Cell.prototype.seedWater = function(val,x,y){
+				if(val===1)this.drop(x,y,this.choose(val,3,0.997));
+			};
+
+			Cell.prototype.waterFlow = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				if(val===1){
+					if(adj.n===3||adj.s===3||adj.e===3||adj.w===3)f.drop(x,y,f.choose(val,3,0.8));
+				}
+			};
+
+			Cell.prototype.waterFill = function(val,x,y){
+				var f = this;
+				var n,s,e,w = null;
+				var adj = f.getAdjascent(x,y,f);
+				if(adj.n===3&&adj.s===3&&adj.e===3&&adj.w===3)f.drop(x,y,3);
+				if(adj.n===3&&adj.s===3&&adj.e===3)f.drop(x,y,3);
+				if(adj.n===3&&adj.s===3&&adj.w===3)f.drop(x,y,3);
+				if(adj.n===3&&adj.e===3&&adj.w===3)f.drop(x,y,3);
+				if(adj.s===3&&adj.e===3&&adj.w===3)f.drop(x,y,3);
+			};
+
+			Cell.prototype.waterDeepen = function(val,x,y){
+				var f = this;
+				var isWater = function(v){
+					return v === Elements.water||v===Elements.deepwater;
+				};
+				if(isWater(val)){
+					var adj = f.getAdjascent(x,y,f);
+					if(isWater(adj.n)&&isWater(adj.s)&&isWater(adj.e)&&isWater(adj.w)
+						&&isWater(adj.nw)&&isWater(adj.ne)&&isWater(adj.se)&&isWater(adj.sw)){
+						f.drop(x,y,Elements.deepwater);
+					}
+				}
+			};
+
+			Cell.prototype.addSand = function(val,x,y){
+				var f = this;
+				var allAcceptable = function(v1,v2,v3){
+					var allSand = function(a,b,c){
+						return a===Elements.sand && b===Elements.sand && c ===Elements.sand;
+					};	
+					var isAcceptable = function(v){
+						return v===Elements.water || v===Elements.sand;
+					};
+					return isAcceptable(v1) && isAcceptable(v2) && isAcceptable(v3) && !allSand(v1,v2,v3);
+				};
+				if(val===Elements.ground){
+					var adj = f.getAdjascent(x,y,f);
+					if(	   
+						allAcceptable(adj.n,adj.ne,adj.e)
+						|| allAcceptable(adj.n,adj.nw,adj.w)
+						|| allAcceptable(adj.s,adj.se,adj.e)
+						|| allAcceptable(adj.s,adj.sw,adj.w)
+						){
+						f.drop(x,y,Elements.sand);
+					}
+				}
+				
+			};
+
+			Cell.prototype.seedGrass = function(val,x,y){
+				if(val===1)this.drop(x,y,this.choose(val,Elements.grass,0.997));
+			};
+
+			Cell.prototype.growGrass = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				var grassGrow = function(a){
+					return 	(
+								a.n===Elements.grass||
+								a.s===Elements.grass||
+								a.e===Elements.grass||
+								a.w===Elements.grass
+							) && !(
+								a.n===Elements.leaves||
+								a.s===Elements.leaves||
+								a.e===Elements.leaves||
+								a.w===Elements.leaves||
+								a.n===Elements.wood||
+								a.s===Elements.wood||
+								a.e===Elements.wood||
+								a.w===Elements.wood||
+								a.ne===Elements.leaves||
+								a.se===Elements.leaves||
+								a.nw===Elements.leaves||
+								a.sw===Elements.leaves||
+								a.ne===Elements.wood||
+								a.se===Elements.wood||
+								a.nw===Elements.wood||
+								a.sw===Elements.wood
+							) && !(
+								a.n===Elements.rocks||
+								a.s===Elements.rocks||
+								a.e===Elements.rocks||
+								a.w===Elements.rocks||
+								a.ne===Elements.rocks||
+								a.se===Elements.rocks||
+								a.nw===Elements.rocks||
+								a.sw===Elements.rocks
+							);
+				}
+				if(val===1){
+					if(grassGrow(adj))
+					{
+						f.drop(x,y,f.choose(val,Elements.grass,0.7));
+					}
+				}
+			};
+
+			Cell.prototype.grassThicken = function(val,x,y){
+				var f = this;
+				var isGrass = function(v){
+					return v === Elements.grass||v===Elements.thickgrass;
+				};
+				var shouldThicken = function(v){
+					return isGrass(v) || v === Elements.water;
+				};
+				if(isGrass(val)){
+					var adj = f.getAdjascent(x,y,f);
+					if(shouldThicken(adj.n)&&shouldThicken(adj.s)&&shouldThicken(adj.e)&&shouldThicken(adj.w)
+						&&shouldThicken(adj.nw)&&shouldThicken(adj.ne)&&shouldThicken(adj.se)&&shouldThicken(adj.sw)){
+						f.drop(x,y,f.choose(val,Elements.thickgrass,0.7));
+					}
+				}
+			};
+
+			Cell.prototype.placeCastle = function(val,x,y){
+				var f = this;
+				var adj = f.getAdjascent(x,y,f);
+				var isCastleGround = function(val){
+					return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
+				};
+				if(	isCastleGround(val) && 
+					isCastleGround(adj.n) &&
+					isCastleGround(adj.s) && 
+					isCastleGround(adj.e) &&
+					isCastleGround(adj.w) &&
+					isCastleGround(adj.ne) &&
+					isCastleGround(adj.se) &&
+					isCastleGround(adj.nw) &&
+					isCastleGround(adj.sw)){
+						var build = function(){
+							f.drop(x,y,Elements.castle);
+							f.drop(x+1,y,Elements.wall);
+							f.drop(x-1,y,Elements.wall);
+							f.drop(x,y+1,Elements.wall);
+							f.drop(x,y-1,Elements.wall);
+							f.drop(x+1,y+1,Elements.tower);
+							f.drop(x-1,y-1,Elements.tower);
+							f.drop(x-1,y+1,Elements.tower);
+							f.drop(x+1,y-1,Elements.tower);
+
+							f.drop(x+2,y,Elements.moat);
+							f.drop(x-2,y,Elements.moat);
+							f.drop(x,y+2,Elements.bridge);
+							f.drop(x,y+3,Elements.bridge);
+							f.drop(x,y-2,Elements.moat);
+							f.drop(x+2,y+2,Elements.moat);
+							f.drop(x-2,y-2,Elements.moat);
+							f.drop(x-2,y+2,Elements.moat);
+							f.drop(x+2,y-2,Elements.moat);
+
+							f.drop(x+2,y+1,Elements.moat);
+							f.drop(x+2,y-1,Elements.moat);
+							f.drop(x-2,y+1,Elements.moat);
+							f.drop(x-2,y-1,Elements.moat);
+							f.drop(x+1,y+2,Elements.moat);
+							f.drop(x-1,y+2,Elements.moat);
+							f.drop(x+1,y-2,Elements.moat);
+							f.drop(x-1,y-2,Elements.moat);
+						};
+						var dontBuild = function(){
+							f.drop(x,y,val);
+						};
+						var chosen = f.choose(dontBuild,build,0.9995);
+						chosen();
+					} 
+			};
+
+//end processes
+
+			Cell.prototype.process = function(val,x,y){
+				this.current(val,x,y);
+			};
+			
+			Cell.prototype.clone = function(){
+				var me = this;
+				var cln = [];
+				var i,l = null;
+    			for(i = 0; i< me.w; i++) {
+					cln[i] = me.universe[i].slice(0);
+				}
+				return cln;
+			};
+
+			Cell.prototype.step = function(){
+				var f = this;
+				var x,y,val = null;
+				f.cln = f.clone();
+				for(x = 0; x < f.w; x++) {
+					for(y = 0; y < f.h; y++) {
+						val = f.cln[x][y];
+						f.process(val,x,y);
+					}
+				}
+			};
+			
+			Cell.prototype.initialise = function(){
+				var me = this;
+				me.x=null;
+				me.y=null;
+				me.generate();
+				me.draw();
+			};
+			
+			Cell.prototype.iterate = function(f){
+				f.step();
+				f.draw();
+			};
+
+			var c = new Cell('canvas');
+			
+			var list = [
+				{t:100,f:c.cave},
+				{t:2,f:c.smooth},
+				{t:2,f:c.squash},
+				{t:1,f:c.trace},
+				{t:1,f:c.higherMountain},
+				{t:1,f:c.highFill},
+				{t:1,f:c.snowCap},
+				{t:1,f:c.seedWater},
+				{t:10,f:c.waterFlow},
+				{t:10,f:c.waterFill},
+				{t:2,f:c.addSand},
+				{t:1,f:c.waterDeepen},
+				{t:1,f:c.seedTrees},
+				{t:1,f:c.treeGrow},
+				{t:1,f:c.seedGrass},
+				{t:30,f:c.growGrass},
+				{t:1,f:c.grassThicken}//,
+				//{t:1,f:c.placeCastle}
+			];
+
+			var perform = function(l){
+				var i = 1;
+				var interval = null;
+				if(l<list.length){
+					c.current = list[l].f;
+					interval = window.setInterval(function(){
+						c.iterate(c);
+						if(i>list[l].t) {
+							clearInterval(interval);
+							perform(l+1);
+						}
+						i++;
+					}, 12);	
+				}			
+			};
+
+			document.getElementById('do').onclick=function(){
+				c.initialise();
+				perform(0);
+			};
+
+		}());
+	</script>
+</body>
+</html>

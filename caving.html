@@ -28,17 +28,29 @@
 		.controls input{
 			width: 3em;
 		}
-		#seen,.whiteText,.info {
+		#seen,.whiteText,.info,.movement {
 			color:white;
 			font-family: monospace;
 		}
 		.whiteText {
 			margin-bottom: 3px;
 		}
+		.movement {
+			margin-bottom: 3px;
+		}
+		.movement span{
+			display:inline-block;
+			width:25px;
+			cursor: pointer;
+			border: solid 1px white;
+		}
+		.movement span:active{
+			background-color: white;
+			color:black;
+		}
 		.info span {
 			display: inline-block;
 			width:50px;
-
 			border: solid 1px white;
 			cursor: pointer;
 			border-radius: 2px;
@@ -73,6 +85,7 @@
 	<div class='holder'>
 		<div class="controls"><input type="text" id="chance" value="0.92"/> <button id="do">Generate</button></div>
 		<canvas id="canvas" width="300" height="300" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+		<div class="movement">Experimental:<span id="left">&#8672;</span><span id="right">&#8674;</span> <span id="up">&#8673;</span><span id="down">&#8675;</span></div>
 		<div class="whiteText">Steps: <span id="moves">0</span> Seen: <span id="seen">0</span>%</div>
 		<div class="info">Element:<span id="gold">0</span><span id="rocks">0</span><span id="leaves">0</span><span id="wood">0</span></div>
 	</div>
@@ -612,19 +625,19 @@
 
 			Cell.prototype.dig = function(x,y){
 				var f = this;
-				if(f.universe[x][y]===7){
+				if(f.universe[x][y]===Elements.gold){
 					Score.addOneGold();
-					f.drop(x,y,1);
-				} else if (f.universe[x][y]===2){
-					f.drop(x,y,1);
+					f.drop(x,y,Elements.ground);
+				} else if (f.universe[x][y]===Elements.rocks){
+					f.drop(x,y,Elements.ground);
 					Score.addOneRocks();
-				} else if (f.universe[x][y]===5){
-					f.drop(x,y,1);
+				} else if (f.universe[x][y]===Elements.wood){
+					f.drop(x,y,Elements.ground);
 					Score.addOneWood();
-				} else if (f.universe[x][y]===6){
-					f.drop(x,y,1);
+				} else if (f.universe[x][y]===Elements.leaves){
+					f.drop(x,y,Elements.ground);
 					Score.addOneLeaves();
-				} else if (f.universe[x][y]===1 && Score.haveCurrent()){
+				} else if (f.universe[x][y]===Elements.ground && Score.haveCurrent()){
 					//should move 'current' to Drops, not score.
 					f.drop(x,y,Elements[Score.current]);
 					Score.take();
@@ -727,6 +740,22 @@
 
 			window.onkeyup = function(e){
 				//console.log('key up');
+			};
+
+			document.getElementById("left").onclick = function(){
+				c.keypress({keyCode:37},c);
+			};
+
+			document.getElementById("right").onclick = function(){
+				c.keypress({keyCode:39},c);
+			};
+
+			document.getElementById("up").onclick = function(){
+				c.keypress({keyCode:38},c);
+			};
+
+			document.getElementById("down").onclick = function(){
+				c.keypress({keyCode:40},c);
 			};
 
 		}());
