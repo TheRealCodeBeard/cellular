@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Forest Fire</title>
+	<style type="text/css">
+		#canvas
+		{
+			border:solid 2px maroon;
+		}
+		body
+		{
+			background-color:black;
+		}
+		.holder
+		{
+			padding-top:150px;
+			text-align:center;
+		}
+	</style>
+</head>
+<body>
+	<div class='holder'>
+		<canvas id="canvas" width="250" height="250" style="">Your browser doesn't support HTML5 Canvas.</canvas>
+	</div>
+	<script language="JavaScript">
+	
+	var E=0;
+	var T=1;
+	var F=2;
+	var B=3;
+	var A=4;
+	var D=5;
+	var W=6;
+	var S=7;
+	var Wd = 8;
+	var Wv = 9;
+	var Td = 10;
+	
+	var forest = {
+    	X: 50,
+    	Y: 50,
+    	initTree: 0.5,
+    	initWater:0.005,
+    	water:null,
+    	waterSeep:0.01,
+    	treeRegrow: 0.001,
+    	treeRegrowWater: 0.1,
+    	lightning: 0.0001,
+    	sheep:0.001,
+    	t: [],
+    	c: ['rgb(184,134,11)', 'rgb(0,255,0)', //0,1
+    		'rgb(255,0,0)','rgb(255,125,0)',//2,3
+    		'rgb(100,100,100)','rgb(150,150,150)',//4,5
+    		'rgb(0,0,255)','rgb(139,90,43)',//6,7
+    		'rgb(0,0,220)','rgb(0,0,170)',//8,9
+    		'rgb(0,200,0)'],//10
+    		
+    	ctx:null,
+    	clone:function(){
+    		var cln = [];
+    		for(i = 0; i < forest.Y; i++) {
+				cln[i] = forest.t[i].slice(0);
+			}
+			return cln;
+    	}
+	};
+ 
+ 	var buildLake = function(forest,water){
+		var to = forest.clone();
+		if(forest.water){
+			var x = water[0];
+			var y = water[1];
+			if(x>0 && 0===to[x-1][y]){forest.t[x-1][y]=W;buildLake(forest,[x-1,y]);}
+			if(x<forest.X-1 && 0===to[x+1][y]){forest.t[x+1][y]=W;buildLake(forest,[x+1,y]);}
+			if(y>0 && 0===to[x][y-1]){forest.t[x][y-1]=W;buildLake(forest,[x,y-1]);}
+			if(y<forest.Y-1 && 0===to[x][y+1]){forest.t[x][y+1]=W;buildLake(forest,[x,y+1]);}
+		}
+ 	};
+ 
+ 	var initialise = function(){ 
+ 		var canvas = document.getElementById('canvas');
+		forest.ctx = canvas.getContext('2d');
+		for(var i = 0; i < forest.X; i++) {
+			forest.t[i] = [];
+			for(var j = 0; j < forest.Y; j++) {
+				forest.t[i][j] = Math.random() < forest.initTree ? T : E;
+				if(!forest.t[i][j] && !forest.water){
+					forest.t[i][j] = Math.random() < forest.initWater ? W : E;
+					if(forest.t[i][j]===W){forest.water=[i,j];}
+				}
+			}
+		}
+		buildLake(forest,forest.water);
+	};
+		 
+	var draw = function(forest) {
+		var wh=5;
+		for(var i = 0; i < forest.X; i++) {
+			for(var j = 0; j < forest.Y; j++) {
+				forest.ctx.fillStyle = forest.c[forest.t[i][j]];
+				forest.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
+			}
+		}
+	}
+	
+	var nextTo = function(to,i,j,w,h,ch){
+		var isVal = function(v){return v===ch;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return left || right || top || bottom;	
+	};
+	
+	var catchesFire = function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,F);
+	};
+	
+	var nextToWater = function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,W);
+	};
+	
+	var nextToAsh = function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,A);
+	};
+	
+	var nextToTree= function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,T);
+	};
+	
+	var nextToEmpty= function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,E);
+	};
+	
+	var nextToSheep= function(to,i,j,w,h){
+		return nextTo(to,i,j,w,h,S);
+	};
+	
+	var treesSwamp = function(to,i,j,w,h){
+		var isVal = function(v){return v===T||v===Td;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && right) || (top && bottom);
+	};
+	
+	var treesSurround = function(to,i,j,w,h){
+		var isVal = function(v){return v===T||v===Td;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && right && top && bottom);
+	};
+	
+	var treesCorner = function(to,i,j,w,h){
+		var isVal = function(v){return v===T||v===Td;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && top || right && bottom || right && top || left && bottom);
+	};
+	
+	var lakeSwamps = function(to,i,j,w,h){
+		var isVal = function(v){return v===W;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && right) || (top && bottom);
+	};
+	
+	var waterSurounds = function(to,i,j,w,h){
+		var isVal = function(v){return v===W||v===Wd||v===Wv;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && right && top && bottom);
+	}
+	
+	var deepWaterSurounds = function(to,i,j,w,h){
+		var isVal = function(v){return v===Wd||v===Wv;};
+		var left = (i>0 && isVal(to[i-1][j]));
+		var right = (i<w-1 && isVal(to[i+1][j]));
+		var top = (j>0 && isVal(to[i][j-1]));
+		var bottom = (j<h-1 && isVal(to[i][j+1]));
+		return (left && right && top && bottom);
+	}
+	
+	var doStep = function(forest) {
+		var to = forest.clone();
+		var i,j = null;
+		
+		for(i = 0; i < forest.X; i++) {
+			for(j = 0; j < forest.Y; j++) {
+				if(E === to[i][j]) {
+					if(nextToWater(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Math.random() < forest.treeRegrowWater ? T : E;
+						if(E===forest.t[i][j]){
+							forest.t[i][j] = Math.random() < forest.waterSeep ? W : E;
+							if(E===forest.t[i][j]){
+								forest.t[i][j] = Math.random() < forest.sheep*50 ? S : E;
+							}
+						}
+					} else if (nextToAsh(to,i,j,forest.X,forest.Y) && nextToTree(to,i,j,forest.X,forest.Y)) {
+						forest.t[i][j] = T;
+					} else if (nextToSheep(to,i,j,forest.X,forest.Y)) {
+						forest.t[i][j] = Math.random() < forest.sheep ? S : E;
+					} else {
+						forest.t[i][j] = Math.random() < forest.treeRegrow ? T : E;
+					}
+				} else if(T === to[i][j]) {
+					if(catchesFire(to,i,j,forest.X,forest.Y)) {
+						forest.t[i][j] = F;
+					} else if (lakeSwamps(to,i,j,forest.X,forest.Y)) {
+						forest.t[i][j] = W;
+					} else if (treesSurround(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Td;					
+					} else {
+						forest.t[i][j] = Math.random() < forest.lightning ? F : T;
+					}
+				} else if(Td === to[i][j]) {
+					if(catchesFire(to,i,j,forest.X,forest.Y)) {
+						forest.t[i][j] = B;
+					} else {
+						forest.t[i][j] = Math.random() < forest.lightning ? T : Td;
+					}
+				} else if(F === to[i][j]) {
+					forest.t[i][j] = B;
+				} else if(B === to[i][j]) {
+					forest.t[i][j] = A;
+				} else if(A === to[i][j]) {
+					forest.t[i][j] = D;
+				} else if(D === to[i][j]) {
+					if(Math.random() < forest.sheep*10){
+						forest.t[i][j] = S;
+					} else {
+						forest.t[i][j] = E;
+					}
+				} else if(S === to[i][j]) {
+					if (nextToWater(to,i,j,forest.X,forest.Y)){
+						if (lakeSwamps(to,i,j,forest.X,forest.Y)) {
+							forest.t[i][j] = W;
+						} else {
+							forest.t[i][j] = Math.random() < forest.waterSeep ? W : S;
+						}
+					} else if (nextToSheep(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Math.random() < forest.waterSeep ? W : S;
+					}
+				} else if (W === to[i][j]) {
+					if(waterSurounds(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Wd;
+					} else if (treesSwamp(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Math.random() < forest.treeRegrow ? T : E;
+					} else if (treesCorner(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Math.random() < forest.treeRegrow ? E : W;
+					}
+				} else if (Wd === to[i][j]){
+					if(deepWaterSurounds(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Wv;
+					} else if(!waterSurounds(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = W;
+					}
+				} else if (Wv === to[i][j]){
+					if(!deepWaterSurounds(to,i,j,forest.X,forest.Y)){
+						forest.t[i][j] = Wd;
+					}
+				}
+			}
+		 }
+	 
+	}
+	
+	initialise();
+	window.setInterval(function(){
+		doStep(forest);
+		draw(forest);
+	}, 75);
+	
+	</script>
+</body>
+</html>
