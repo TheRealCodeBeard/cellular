@@ -271,6 +271,12 @@
 					areAll:function(element){
 						return nsewAll(element) && nesenwswAll(element);
 					},
+					nsewAny:function(element){
+						return 	n===element ||
+								s===element ||
+								e===element ||
+								w===element;
+					},
 					containedEast:function(element){
 						return  n ===element &&
 								ne===element &&
@@ -301,6 +307,9 @@
 					},
 					anyNsewNotNull:function(){
 						return 	n || s || e || w ;
+					},
+					anyNsewNull:function(){
+						return n===null || s===null || e===null || w===null;
 					}
 				};
 			};
@@ -330,7 +339,7 @@
 				} else if (val === Elements.stone) {
 					if(adj.containedEast(Elements.ground)){f.drop(x,y,Elements.ground);}
 					if(adj.containedWest(Elements.ground)){f.drop(x,y,Elements.ground);}
-					if(adj.containedNorth(Element.ground)){f.drop(x,y,Elements.ground);}
+					if(adj.containedNorth(Elements.ground)){f.drop(x,y,Elements.ground);}
 					if(adj.containedSouth(Elements.ground)){f.drop(x,y,Elements.ground);}
 				}
 			};
@@ -338,31 +347,28 @@
 			Cell.prototype.squash = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
-				if(val){
-					if(adj.n+adj.s+adj.e+adj.w===0){f.drop(x,y,0);}
-					if(adj.n===null||adj.s===null||adj.e===null||adj.w===null){f.drop(x,y,0);}
-				} else {
-					if(adj.n+adj.s+adj.e+adj.w===4){f.drop(x,y,1);}
+				if(val===Elements.ground){
+					if(adj.nsewAll(Elements.stone)){f.drop(x,y,Elements.stone);}
+				} else if (val === Elements.stone) {
+					if(adj.nsewAll(Elements.ground)){f.drop(x,y,Elements.ground);}
 				}
+				if(adj.anyNsewNull()){f.drop(x,y,Elements.stone);}
 			};
 
 			Cell.prototype.trace = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
 				if(val){
-					if(adj.n!==0&&!adj.n)f.drop(x,y,8);
-					if(adj.s!==0&&!adj.s)f.drop(x,y,8);
-					if(adj.e!==0&&!adj.e)f.drop(x,y,8);
-					if(adj.w!==0&&!adj.w)f.drop(x,y,8);
-					if(val!=7){
-						if((adj.n===2||adj.n===0)&&
-							(adj.s===2||adj.s===0)&&
-							(adj.e===2||adj.e===0)&&
-							(adj.w===2||adj.w===0))f.drop(x,y,0);
+					if(adj.n!==Elements.stone&&!adj.n)f.drop(x,y,Elements.hard);
+					if(adj.s!==Elements.stone&&!adj.s)f.drop(x,y,Elements.hard);
+					if(adj.e!==Elements.stone&&!adj.e)f.drop(x,y,Elements.hard);
+					if(adj.w!==Elements.stone&&!adj.w)f.drop(x,y,Elements.hard);
+					if(val!==Elements.gold){
+						if(adj.nsewAll(Elements.rocks)||adj.nsewAll(Elements.stone))f.drop(x,y,Elements.stone);
 					}
 				} else {
-					if(val!=7){
-						if(adj.n===1||adj.s===1||adj.e===1||adj.w===1)f.drop(x,y,2);
+					if(val!==Elements.gold){
+						if(adj.nsewAny(Elements.ground))f.drop(x,y,Elements.rocks);
 					}
 				}
 			};
@@ -648,10 +654,10 @@
 			
 			var list = [
 				{t:100,f:c.cave},
-				{t:2,f:c.smooth}/*,
+				{t:3,f:c.smooth},
 				{t:2,f:c.squash},
 				{t:1,f:c.trace},
-				{t:1,f:c.higherMountain},
+				{t:1,f:c.higherMountain}/*,
 				{t:1,f:c.highFill},
 				{t:1,f:c.snowCap},
 				{t:1,f:c.seedWater},
