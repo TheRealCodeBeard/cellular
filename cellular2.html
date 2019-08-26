@@ -271,6 +271,34 @@
 					areAll:function(element){
 						return nsewAll(element) && nesenwswAll(element);
 					},
+					containedEast:function(element){
+						return  n ===element &&
+								ne===element &&
+								e ===element &&
+								se===element &&
+								s ===element;
+					},
+					containedWest:function(element){
+						return  n ===element &&
+								nw===element &&
+								w ===element &&
+								sw===element &&
+								s ===element;
+					},
+					containedNorth:function(element){
+						return  w ===element &&
+								nw===element &&
+								n ===element &&
+								ne ===element &&
+								e ===element;
+					},
+					containedSouth:function(element){
+						return  w ===element &&
+								sw===element &&
+								s ===element &&
+								se ===element &&
+								e ===element;
+					},
 					anyNsewNotNull:function(){
 						return 	n || s || e || w ;
 					}
@@ -285,7 +313,7 @@
 				if(val){
 					if(adj.nsewAll(Elements.stone)){f.drop(x,y,Elements.stone);}
 				} else {
-					if(adj.anyNsewNotNull(Element.stone)){
+					if(adj.anyNsewNotNull(Elements.stone)){
 						f.drop(x,y,f.choose(Elements.stone,Elements.ground,0.97));
 					}
 				}
@@ -294,16 +322,16 @@
 			Cell.prototype.smooth = function(val,x,y){
 				var f = this;
 				var adj = f.getAdjascent(x,y,f);
-				if(val){
-					if(adj.n+adj.ne+adj.e+adj.se+adj.s===0){f.drop(x,y,0);}
-					if(adj.n+adj.nw+adj.w+adj.sw+adj.s===0){f.drop(x,y,0);}
-					if(adj.w+adj.nw+adj.n+adj.ne+adj.e===0){f.drop(x,y,0);}
-					if(adj.w+adj.sw+adj.s+adj.se+adj.e===0){f.drop(x,y,0);}
-				} else {
-					if(adj.n+adj.ne+adj.e+adj.se+adj.s===5){f.drop(x,y,1);}
-					if(adj.n+adj.nw+adj.w+adj.sw+adj.s===5){f.drop(x,y,1);}
-					if(adj.w+adj.nw+adj.n+adj.ne+adj.e===5){f.drop(x,y,1);}
-					if(adj.w+adj.sw+adj.s+adj.se+adj.e===5){f.drop(x,y,1);}
+				if(val === Elements.ground){
+					if(adj.containedEast(Elements.stone)){f.drop(x,y,Elements.stone);}
+					if(adj.containedWest(Elements.stone)){f.drop(x,y,Elements.stone);}
+					if(adj.containedNorth(Elements.stone)){f.drop(x,y,Elements.stone);}
+					if(adj.containedSouth(Elements.stone)){f.drop(x,y,Elements.stone);}
+				} else if (val === Elements.stone) {
+					if(adj.containedEast(Elements.ground)){f.drop(x,y,Elements.ground);}
+					if(adj.containedWest(Elements.ground)){f.drop(x,y,Elements.ground);}
+					if(adj.containedNorth(Element.ground)){f.drop(x,y,Elements.ground);}
+					if(adj.containedSouth(Elements.ground)){f.drop(x,y,Elements.ground);}
 				}
 			};
 
@@ -620,7 +648,7 @@
 			
 			var list = [
 				{t:100,f:c.cave},
-				{t:2,f:c.smooth},
+				{t:2,f:c.smooth}/*,
 				{t:2,f:c.squash},
 				{t:1,f:c.trace},
 				{t:1,f:c.higherMountain},
@@ -635,8 +663,8 @@
 				{t:1,f:c.treeGrow},
 				{t:1,f:c.seedGrass},
 				{t:30,f:c.growGrass},
-				{t:1,f:c.grassThicken}//,
-				//{t:1,f:c.placeCastle}
+				{t:1,f:c.grassThicken},
+				{t:1,f:c.placeCastle}*/
 			];
 
 			var name = function(){
