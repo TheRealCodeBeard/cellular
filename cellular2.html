@@ -59,7 +59,8 @@
 	</div>
 	<script src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
-
+		//This is a look up of the colours to use when drawing the element of the map.
+		//There is only one layer and one cell can only be one colour.
   		var Colours = {
 			black 		: 'rgb(0,0,0)',
 			ground 		: 'rgb(245,222,179)',
@@ -89,6 +90,8 @@
 			}
   		};
 
+		//These are the elements that can be laid in the grid.
+		//Basically it's an enum of numbers.
   		var Elements = {
   			stone:0,
   			ground:1,
@@ -128,21 +131,28 @@
 	<script>
 		(function(){
 
+			//The cell object is the unit of processing. 
+			//It contains the canvas context and knows how big it is.
 			var Cell = function(canvas_id){
 				var me = this;
 				var canvas = document.getElementById(canvas_id);
 				me.ctx = canvas.getContext('2d');
 				me.universe=null;
 				me.wh = 5;
-				me.w=me.ctx.canvas.clientWidth/me.wh//60;
-				me.h=me.ctx.canvas.clientHeight/me.wh//60;
+				me.w=me.ctx.canvas.clientWidth/me.wh;//The division here is because one cell is not one pixel
+				me.h=me.ctx.canvas.clientHeight/me.wh;
 				me.cln = null;
 			};
 		
+			//Helper function that wraps a random choice between a and b.
+			//So this could be a number, object or function.
 			Cell.prototype.choose = function(a,b,limit){
 				return (Math.random()< limit ? a : b);
 			};
 
+			//Initially generate the universe. 
+			//The universe is a 2D array that represents the map as numbers.
+			//It is initialised to ground and stone based on a user given value
 			Cell.prototype.generate = function(){
 				var f = this;
 				var v = document.getElementById('chance').value;
@@ -150,11 +160,13 @@
 				for(var i = 0; i < f.w; i++) {
 					f.universe[i] = [];
 					for(var j = 0; j < f.h; j++) {
-						f.universe[i][j] = f.choose(0,1,v);
+						f.universe[i][j] = f.choose(Elements.stone,Elements.ground,v);
 					}
 				}
 			};
 			
+			//calculates the distance between two points.
+			//It was used for the 'game' version, but I thought it might be useful later.
 			Cell.prototype.distanceFrom = function(x,y,ax,ay){
 				var sq= function(x){return x*x;};
 				if(!x && !y) return true;
@@ -167,10 +179,12 @@
 				return Colours.get(el);
 			};
 
+			//The main draw method.
+			//It loops the 2D array of the universe
+			//and creates a rectangle of the cell size and universe element colour at each location.
 			Cell.prototype.draw = function(){
 				var me = this;				
 				if(me.ctx){
-					//var wh=5;//width of a drawn tile
 					var wh = me.wh;
 					for(var i = 0; i < me.w; i++) {
 						for(var j = 0; j < me.h; j++) {
@@ -181,6 +195,7 @@
 				}
 			};
 
+			//This sets the value of given co-ordinate in the universie to the number given.
 			Cell.prototype.drop = function(x,y,v){
 				try{
 					if(v!==this.cln[x][y]){
@@ -188,15 +203,21 @@
 						return true;
 					}
 					return false;
-				} catch(e) {
+				} catch(e) {//Can't remember why I had a try catch in here?
 					console.log('exception:',e);
 					console.log(x,y);
 					return false;
 				}
 			};
 
+			//This is a massive mess of a helper function that, for any given universe point (p) returns
+			// NW N NE
+			//  W p E
+			// SW S SE
+			//Elements. It also provides helpful lookups against the object to make choice code easier.
 			Cell.prototype.getAdjascent = function(x,y,f){
 				var n,s,e,w,ne,se,nw,sw = null;
+				//It works on the clone (f.cln) of the universe so it doesn't self refer as it works through
 				if(y-1>=0) n = f.cln[x][y-1];
 				if(y+1<f.h) s = f.cln[x][y+1];
 				if(x+1<f.w) e = f.cln[x+1][y];
@@ -216,36 +237,46 @@
 					se:se,
 					nw:nw,
 					sw:sw,
+					//Do N S E W all match the given element?
 					nsewAll:function(element){
 						return 	n === element &&
 								s === element &&
 								e === element &&
 								w === element; 
 					},
+					//Do NE SW SE NW all match the given element?
 					nesenwswAll:function(element){
 						return 	ne === element &&
 								se === element &&
 								nw === element &&
 								sw === element; 
 					},
+					//Is the point entierly surrounded by the given element?
 					areAll:function(element){
 						return this.nsewAll(element) && this.nesenwswAll(element);
 					},
+					//Are any of N S E W the given element?
 					nsewAny:function(element){
 						return 	n===element ||
 								s===element ||
 								e===element ||
 								w===element;
 					},
+					//Are any of NW SW SE NW the given element?
 					nesenwswAny:function(element){
 						return 	nw===element ||
 								sw===element ||
 								ne===element ||
 								se===element;
 					},
+					//Are any of the surrounded points the given element?
 					areAny:function(element){
 						return this.nsewAny(element) || this.nesenwswAny(element);
 					},
+					//Contained means that 5 points on that side are the given element
+					// NW |N NE|
+					// 	W  p E | Means p is contained east. 
+					// SW |S SE|
 					containedEast:function(element){
 						return  n ===element &&
 								ne===element &&
@@ -253,6 +284,7 @@
 								se===element &&
 								s ===element;
 					},
+					//5 points to the west.
 					containedWest:function(element){
 						return  n ===element &&
 								nw===element &&
@@ -260,6 +292,7 @@
 								sw===element &&
 								s ===element;
 					},
+					//5 points above
 					containedNorth:function(element){
 						return  w ===element &&
 								nw===element &&
@@ -267,6 +300,7 @@
 								ne ===element &&
 								e ===element;
 					},
+					//5 points below
 					containedSouth:function(element){
 						return  w ===element &&
 								sw===element &&
@@ -274,26 +308,31 @@
 								se ===element &&
 								e ===element;
 					},
+					//3 points to the east. N E S
 					partialContainedEast:function(element){
 						return  n ===element &&
 								e ===element &&
 								s ===element;
 					},
+					//3 points to the west. N W S
 					partialContainedWest:function(element){
 						return  n ===element &&
 								w ===element &&
 								s ===element;
 					},
+					//3 points to the north E N W
 					partialContainedNorth:function(element){
 						return  w ===element &&
 								n ===element &&
 								e ===element;
 					},
+					//3 points to the south E S W
 					partialContainedSouth:function(element){
 						return  w ===element &&
 								s ===element &&
 								e ===element;
 					},
+					//Is partial contained on any side by given element
 					partialContained:function(element){
 						return  this.partialContainedEast(element)  ||
 								this.partialContainedWest(element)  ||
@@ -310,6 +349,8 @@
 			};
 
 //processes
+//All of these functions loop the grid ONCE and follow particular rules.
+//Thew are composed in the list below.
 
 			Cell.prototype.cave = function(val,x,y){
 				var f = this;
@@ -571,10 +612,13 @@
 
 //end processes
 
+			//Call the current given proceedure from the composed list 
+			//on the universe's value at X,Y 
 			Cell.prototype.process = function(val,x,y){
 				this.current(val,x,y);
 			};
 			
+			//Copy the universe so we don't 'work on ourselves'
 			Cell.prototype.clone = function(){
 				var me = this;
 				var cln = [];
@@ -585,6 +629,8 @@
 				return cln;
 			};
 
+			//One step of the process is to clone the universe
+			//Get the current value in a loop and call process above
 			Cell.prototype.step = function(){
 				var f = this;
 				var x,y,val = null;
@@ -597,6 +643,8 @@
 				}
 			};
 			
+			//This clears the current state of the map
+			//and generates a new universe
 			Cell.prototype.initialise = function(){
 				var me = this;
 				me.x=null;
@@ -605,13 +653,18 @@
 				me.draw();
 			};
 			
+			//This is called in the perform loop.
+			//Do one step of the process and then draw.
 			Cell.prototype.iterate = function(f){
 				f.step();
 				f.draw();
 			};
 
+			//I don't know why it is called Cell when it is the whole map
 			var c = new Cell('canvas');
 			
+			//This is the list where you compose the proceedures (f)
+			//How many time they iterate (t) and the order in which they are done
 			var list = [
 				{t:100,f:c.cave},
 				{t:3,f:c.smooth},
@@ -634,6 +687,7 @@
 				{t:1,f:c.placeCastle}
 			];
 
+			//Generate a random name from parts.
 			var name = function(){
 				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Glam", "Grey-", "Porto-","High-", "Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-","Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late"];
 				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", "pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf", "cla", "ra", "wo", "i"];
@@ -644,35 +698,39 @@
 				var landname = "" + starts[pick_start] + mids[pick_mid] + ends[pick_end];
 				document.getElementById('name').value=landname;
 			};
-
+			
+			//Clear the name field/record for generation
 			var clearName = function(){
 				document.getElementById('name').value="...building"
 			};
 
+			//This causes the process to work with the window to animate it.
 			var perform = function(l){
 				var i = 1;
 				var interval = null;
-				if(l<list.length){
-					c.current = list[l].f;
+				if(l<list.length){//If l is still on the given composed list of actions
+					c.current = list[l].f;//Set current to the given function
 					interval = window.setInterval(function(){
-						c.iterate(c);
-						if(i>list[l].t) {
+						c.iterate(c);//Tell c to perform the given acton
+						if(i>list[l].t) {//if the number of times given in the list is not reached
 							clearInterval(interval);
-							perform(l+1);
+							perform(l+1);//do it again
 						}
 						i++;
-					}, 12);	
+					}, 12);
 				}
 			};
 
+			//When clicked, generates map
 			document.getElementById('do').onclick=function(){
 				if(document.getElementById('generate').checked){
 					clearName();
 					name();
 				};
+				//Using a random seed library to allow for same map generation
 				Math.seedrandom(document.getElementById('name').value);
-				c.initialise();
-				perform(0);
+				c.initialise();//Initialise the cell.
+				perform(0);//Perform th efirst item on the given list
 			};
 
 		}());
