@@ -689,9 +689,16 @@
 
 			//Generate a random name from parts.
 			var name = function(){
-				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Glam", "Grey-", "Porto-","High-", "Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-","Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late"];
-				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", "pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf", "cla", "ra", "wo", "i"];
-				var ends = ["nova","land","noc"," landing","sia","po","mra","mouth","tak"," water"," machi", "grad", "scotia", "helm","man", " sword", "-yama","-bluff", "wold"," shadow"," farm", " willow", " mura", "naka", " hill", "mia", "be", " bay", " leigh"];
+				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Glam", "Grey-", "Porto-","High-", 
+								"Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-",
+								"Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late", "Lake E", "Mount A", "Lake O",
+								"Mount E","Cape"];
+				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", 
+							"pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf", "cla", "ra", 
+							"wo", "i"];
+				var ends = ["nova","land","noc"," landing","sia","po","mra","mouth","tak"," water"," machi", "grad", "scotia", 
+							"helm","man", " sword", "-yama","-bluff", "wold"," shadow"," farm", " willow", " mura", "naka", 
+							" hill", "mia", "be", " bay", " leigh","berg","isle", " island"," cove"];
 				var pick_start = Math.round(Math.random()*(starts.length-1));
 				var pick_mid = Math.round(Math.random()*(mids.length-1));
 				var pick_end = Math.round(Math.random()*(ends.length-1));
