@@ -551,7 +551,7 @@
 				if(val === Elements.grass || val === Elements.thickgrass)
 				{
 					var adj = f.getAdjascent(x,y,f);
-					if(adj.areAll(Elements.grass)||adj.areAll(Elements.thickgrass))
+					if(adj.areAll(Elements.grass)||adj.areAny(Elements.thickgrass))
 					{
 						f.drop(x,y,f.choose(val,Elements.thickgrass,0.7));
 					} else if (adj.areAny(Elements.water))
@@ -683,7 +683,7 @@
 				{t:1,f:c.treeGrow},
 				{t:1,f:c.seedGrass},
 				{t:30,f:c.growGrass},
-				{t:1,f:c.grassThicken},
+				{t:2,f:c.grassThicken},
 				{t:1,f:c.placeCastle}
 			];
 
@@ -692,7 +692,7 @@
 				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Glam", "Grey-", "Porto-","High-", 
 								"Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-",
 								"Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late", "Lake E", "Mount A", "Lake O",
-								"Mount E","Cape"];
+								"Mount E","Cape","Red-","Blue-","Green-"];
 				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", 
 							"pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf", "cla", "ra", 
 							"wo", "i"];
