@@ -89,6 +89,7 @@
 			tower		: 'rgb(40,10,40)',
 			moat 		: 'rgb(0,0,255)',
 			bridge 		: 'rgb(170,92,55)',
+			road		: 'rgb(120,120,120)',
 			get:function(name){
 				return this[name];
 			}
@@ -118,6 +119,7 @@
 			tower:18,
 			moat:19,
 			bridge:20,
+			road:21,
   			build:function(){
   				for(var el in this){
   					if(isNaN(el)){
@@ -148,6 +150,7 @@
 				me.w=me.ctx.canvas.clientWidth/me.wh;//The division here is because one cell is not one pixel
 				me.h=me.ctx.canvas.clientHeight/me.wh;
 				me.cln = null;
+				me.haveCastle=false;
 			};
 		
 			//Helper function that wraps a random choice between a and b.
@@ -177,6 +180,7 @@
 				var me = this;
 				me.x=null;
 				me.y=null;
+				me.haveCastle=false;
 				me.generate();
 			};
 
@@ -604,52 +608,103 @@
 
 			Cell.prototype.placeCastle = function(val,x,y){
 				var f = this;
-				var adj = f.getAdjascent(x,y,f);
-				if(x>10 && x<(f.w * f.wh)-10 && y > 10 && y< (f.h * f.wh) - 10)
-				{
-					var isCastleGround = function(val){
-						return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
-					};
-					if(adj.areAll(Elements.ground)||adj.areAll(Elements.thickgrass)||adj.areAll(Elements.grass))
-					{
-						var build = function(){
-							f.drop(x,y,Elements.castle);
-							f.drop(x+1,y,Elements.wall);
-							f.drop(x-1,y,Elements.wall);
-							f.drop(x,y+1,Elements.wall);
-							f.drop(x,y-1,Elements.wall);
-							f.drop(x+1,y+1,Elements.tower);
-							f.drop(x-1,y-1,Elements.tower);
-							f.drop(x-1,y+1,Elements.tower);
-							f.drop(x+1,y-1,Elements.tower);
+				if(!f.haveCastle){
+					var adj = f.getAdjascent(x,y,f);
+					if(!adj.areAny(Elements.castle)&&!adj.areAny(Elements.wall)&&!adj.areAny(Elements.tower)){
+						if(x*f.wh>50 && x*f.wh<(f.w * f.wh)-50 && y*f.wh > 50 && y*f.wh< (f.h * f.wh) - 50)
+						{
+							var isCastleGround = function(val){
+								return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
+							};
+							if(adj.areAll(Elements.ground)||adj.areAll(Elements.thickgrass)||adj.areAll(Elements.grass))
+							{
+								var build = function(){
+									//f.haveCastle=true;
+									//console.log(x*f.wh,y*f.wh,f.w*f.wh,f.h*f.wh);
+									f.drop(x,y,Elements.castle);
+									f.drop(x+1,y,Elements.wall);
+									f.drop(x-1,y,Elements.wall);
+									f.drop(x,y+1,Elements.wall);
+									f.drop(x,y-1,Elements.wall);
+									f.drop(x+1,y+1,Elements.tower);
+									f.drop(x-1,y-1,Elements.tower);
+									f.drop(x-1,y+1,Elements.tower);
+									f.drop(x+1,y-1,Elements.tower);
 
-							f.drop(x+2,y,Elements.moat);
-							f.drop(x-2,y,Elements.moat);
-							f.drop(x,y+2,Elements.bridge);
-							f.drop(x,y+3,Elements.bridge);
-							f.drop(x,y-2,Elements.moat);
-							f.drop(x+2,y+2,Elements.moat);
-							f.drop(x-2,y-2,Elements.moat);
-							f.drop(x-2,y+2,Elements.moat);
-							f.drop(x+2,y-2,Elements.moat);
+									f.drop(x+2,y,Elements.moat);
+									f.drop(x-2,y,Elements.moat);
+									f.drop(x,y+2,Elements.bridge);
+									f.drop(x,y+3,Elements.bridge);
+									f.drop(x,y-2,Elements.moat);
+									f.drop(x+2,y+2,Elements.moat);
+									f.drop(x-2,y-2,Elements.moat);
+									f.drop(x-2,y+2,Elements.moat);
+									f.drop(x+2,y-2,Elements.moat);
 
-							f.drop(x+2,y+1,Elements.moat);
-							f.drop(x+2,y-1,Elements.moat);
-							f.drop(x-2,y+1,Elements.moat);
-							f.drop(x-2,y-1,Elements.moat);
-							f.drop(x+1,y+2,Elements.moat);
-							f.drop(x-1,y+2,Elements.moat);
-							f.drop(x+1,y-2,Elements.moat);
-							f.drop(x-1,y-2,Elements.moat);
-						};
-						var dontBuild = function(){
-							f.drop(x,y,val);
-						};
-						var chosen = f.choose(dontBuild,build,0.999);
-						chosen();
-					} 
+									f.drop(x+2,y+1,Elements.moat);
+									f.drop(x+2,y-1,Elements.moat);
+									f.drop(x-2,y+1,Elements.moat);
+									f.drop(x-2,y-1,Elements.moat);
+									f.drop(x+1,y+2,Elements.moat);
+									f.drop(x-1,y+2,Elements.moat);
+									f.drop(x+1,y-2,Elements.moat);
+									f.drop(x-1,y-2,Elements.moat);
+								};
+								var dontBuild = function(){
+									f.drop(x,y,val);
+								};
+								var chosen = f.choose(dontBuild,build,0.99);//0.999);
+								chosen();
+							} 
+						}
+					}
 				}
 			};
+
+			Cell.prototype.road = function(val,x,y){
+				var f = this;
+				if(val===Elements.ground||val===Elements.grass||val===Elements.thickgrass||val===Elements.leaves){
+					var adj = f.getAdjascent(x,y,f);
+					if(adj.n===Elements.bridge){
+						f.drop(x,y,Elements.road);//Draws the first road
+						var directions = ["n","s","e","w"];
+						f.randomWalk(Elements.road,x,y,directions,directions);
+					}
+				}
+			};
+
+			Cell.prototype.randomWalk = function(element,x,y,all_directions,directions,last_direction){
+				if(directions.length>0){
+					var f = this;
+					var v=f.choose(1,-1,0.5);
+					x2 = f.choose(x,x+v,0.5);
+					y2 = f.choose(y,y+v,0.5);
+					var i = Math.floor(Math.random()*directions.length);
+					var dir = directions[i];
+					if(directions.includes(last_direction) && Math.random()>0.15){
+						dir = last_direction;
+					}
+					//console.log(directions,last_direction,dir,i);
+					if(dir==="n"){x2=x;y2=y-1;}
+					else if(dir==="s"){x2=x;y2=y+1;}
+					else if(dir==="e"){x2=x+1;y2=y;}
+					else if(dir==="w"){x2=x-1;y2=y;}
+					var old_val = f.universe[x][y];
+					var val = f.universe[x2][y2];
+					if(x2>0 && x2<f.universe.length-1 && y2>0 && y2<f.universe[x2].length-1){
+						//console.log(Elements.get(old_val),x,y,Elements.get(val),x2,y2);
+						if(val===Elements.ground ||
+							val===Elements.grass ||val===Elements.thickgrass ||
+							val===Elements.sand||val===Elements.leaves){
+							f.drop(x2,y2,element);
+							f.randomWalk(element,x2,y2,all_directions,all_directions,dir);
+						} else {
+							var new_directions = directions.filter(function(v){return v!==dir;});
+							f.randomWalk(element,x,y,all_directions,new_directions,last_direction);
+						}
+					}
+				}
+			}
 
 // Page & Button operations
 
@@ -677,9 +732,10 @@
 				{t:1,f:c.seedGrass},
 				{t:30,f:c.growGrass},
 				{t:2,f:c.grassThicken},
-				{t:1,f:c.placeCastle}
+				{t:1,f:c.placeCastle},
+				{t:1,f:c.road}
 			];
-			
+
 			//This causes the process to work with the window to animate it.
 			var perform = function(l){
 				var i = 1;
@@ -738,6 +794,9 @@
 				c.initialise();//Initialise the grid.
 				perform(0);//Perform th efirst item on the given list
 			};
+
+//Useful debug map names
+//Capera base - one castle where road should work
 
 		}());
 	</script>
