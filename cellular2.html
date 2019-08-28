@@ -61,7 +61,23 @@
 		</div>
 
 	</div>
-	<script src="seedrandom.min.js"></script>
+	<script type='text/javascript' src='astar.js'></script>
+	<script type='text/javascript'>
+		//A test of the A* script
+		var graph = new Graph([
+			[1,1,1,1],
+			[0,1,0,1],
+			[0,1,1,1]
+		],{ diagonal: false });
+		console.log(graph.toString());
+		var start = graph.grid[0][0];
+		var end = graph.grid[2][2];
+		var result = astar.search(graph, start, end);
+		console.log(start.toString());
+		console.log(end.toString());
+		console.log(result.toString());
+	</script>
+	<script type='text/javascript' src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
 		//This is a look up of the colours to use when drawing the element of the map.
 		//There is only one layer and one cell can only be one colour.
@@ -89,7 +105,7 @@
 			tower		: 'rgb(40,10,40)',
 			moat 		: 'rgb(0,0,255)',
 			bridge 		: 'rgb(170,92,55)',
-			road		: 'rgb(120,120,120)',
+			road		: 'rgb(255,0,0)',//'rgb(120,120,120)',
 			get:function(name){
 				return this[name];
 			}
@@ -134,7 +150,7 @@
   		Elements.build();//makes a nice lookup
 
   	</script>
-	<script>
+	<script type="text/javascript">
 		(function(){
 
 //Cell base functions, set up etc.
