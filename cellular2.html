@@ -827,7 +827,7 @@
 			Cell.prototype.textureFarm = function(val,x,y){
 				var f = this;
 				if(val===Elements.farm){
-					f.drop(x,y,f.choose(Elements.farm,Elements.altfarm,0.5));
+					f.drop(x,y,f.choose(Elements.farm,Elements.altfarm,0.6));
 				}
 			};
 
@@ -861,7 +861,7 @@
 				{t:2,f:c.grassThicken},
 				{t:1,f:c.road},
 				{t:1,f:c.placeCastle},
-				{t:1,f:c.seedFarm},
+				{t:3,f:c.seedFarm},
 				{t:3,f:c.growFarm},
 				{t:2,f:c.fillFarm},
 				{t:1,f:c.textureFarm}
