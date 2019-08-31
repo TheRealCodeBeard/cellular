@@ -711,13 +711,13 @@
 
 			Cell.prototype.placeCastle = function(val,x,y){
 				var f = this;
-				if(!f.haveCastle){
+				if(!f.haveCastle){//This is a flag to set if you only want 1 castle
 					var adj = f.getAdjascent(x,y,f);
-					if(adj.s===Elements.road){
-						var isCastleGround = function(val){
+					if(adj.s===Elements.road){//Castles go next to roads
+						var isCastleGround = function(val){//Castles go on ground and grass
 							return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
 						};
-						var drawCastle = function(cx,cy){
+						var drawCastle = function(cx,cy){//Draw the castle at the given location in f defined at the start of place castle
 							f.drop(cx,cy,Elements.castle);
 							f.drop(cx+1,cy,Elements.wall);
 							f.drop(cx-1,cy,Elements.wall);
@@ -728,27 +728,31 @@
 							f.drop(cx-1,cy+1,Elements.tower);
 							f.drop(cx+1,cy-1,Elements.tower);
 							f.drop(cx,cy+2,Elements.bridge);
-							f.castles.push({x:cx,y:cy});
+							f.castles.push({x:cx,y:cy});//Add to the array of castles, used for distance checkign
 						}
 						var distanceFromClosestCastle = function(castles,cx,cy){
+							//We want to know if we are too close to another castle, looks strange to be bunched up so we track where castles are
+							//And check how far away we are before drawing.
 							var distances = castles.map(function(castle){
 								return Math.floor(f.distanceFrom(cx,cy,castle.x,castle.y));
 							});
-							distances.sort();
+							distances.sort(function(a,b){return a-b;});
 							return distances[0];
 						};
 						if(isCastleGround(val)){
+							//Check there is space to draw the castles
+							//Castles are only ever to the north of roads.
 							if(adj.containedNorth(Elements.ground)||adj.containedNorth(Elements.thickgrass)||adj.containedNorth(Elements.grass))
 							{
-								y= y-2;
+								y= y-2;//We start drawing two spaces above the road
 								if(f.castles.length>0){
 									var distance =  distanceFromClosestCastle(f.castles,x,y);
-									if(distance>10) {
+									if(distance>20) {//Only draw a castle if we are not too close to another castle
 										drawCastle(x,y);
 									} else {
-										console.log("Too cose to last castle")
+										console.log("Too cose to last castle");//Tell people why we didn't draw a castle
 									};
-								} else {
+								} else {//If there are no castles, draw one.
 									drawCastle(x,y);
 								}
 							}
