@@ -112,6 +112,7 @@
 			road		: 'rgb(145,67,30)',//'rgb(120,120,120)',
 			farm		: 'rgb(255,200,0)',
 			altfarm		: 'rgb(230,160,0)',
+			house		: 'rgb(200,55,55)',//'rgb(155,155,155)',
 			get:function(name){
 				return this[name];
 			}
@@ -144,6 +145,7 @@
 			road:21,
 			farm:22,
 			altfarm:23,
+			house:24,
   			build:function(){
   				for(var el in this){
   					if(isNaN(el)){
@@ -786,6 +788,25 @@
 				}
 			};
 
+			Cell.prototype.placeHouse = function(val,x,y){
+				var f = this;
+				if(f.castles.length>0){
+					var distance = f.distanceFromClosestCastle(x,y);
+					if(distance<15){
+						var adj = f.getAdjascent(x,y,f);
+						if(adj.e===Elements.road||adj.w===Elements.road){//Houses go next to roads
+							if(val === Elements.ground||val === Elements.grass)
+							{
+								if(Math.random()>0.7)
+								{
+									f.drop(x,y,Elements.house);
+								}
+							}
+						}
+					}
+				}
+			};
+
 			Cell.prototype.seedFarm = function(val,x,y){
 				var f = this;
 				if(f.castles.length>0){
@@ -800,6 +821,7 @@
 					}
 				}
 			}
+			
 			Cell.prototype.growFarm = function(val,x,y){
 				var f = this;
 				if(val === Elements.thickgrass){
@@ -861,6 +883,7 @@
 				{t:2,f:c.grassThicken},
 				{t:1,f:c.road},
 				{t:1,f:c.placeCastle},
+				{t:1,f:c.placeHouse},
 				{t:3,f:c.seedFarm},
 				{t:3,f:c.growFarm},
 				{t:2,f:c.fillFarm},
