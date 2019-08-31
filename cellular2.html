@@ -170,6 +170,7 @@
 				me.cln = null;
 				me.haveCastle=false;
 				me.haveRoad=false;
+				me.roadAttempts=0;
 			};
 		
 			//Helper function that wraps a random choice between a and b.
@@ -201,6 +202,7 @@
 				me.y=null;
 				me.haveCastle=false;
 				me.haveRoad=false;
+				me.roadAttempts=0;
 				me.generate();
 			};
 
@@ -626,82 +628,40 @@
 				}
 			};
 
-			Cell.prototype.placeCastle = function(val,x,y){
-				var f = this;
-				if(!f.haveCastle){
-					var adj = f.getAdjascent(x,y,f);
-					if(!adj.areAny(Elements.castle)&&!adj.areAny(Elements.wall)&&!adj.areAny(Elements.tower)){
-						if(x*f.wh>50 && x*f.wh<(f.w * f.wh)-50 && y*f.wh > 50 && y*f.wh< (f.h * f.wh) - 50)
-						{
-							var isCastleGround = function(val){
-								return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
-							};
-							if(adj.areAll(Elements.ground)||adj.areAll(Elements.thickgrass)||adj.areAll(Elements.grass))
-							{
-								var build = function(){
-									//f.haveCastle=true;
-									//console.log(x*f.wh,y*f.wh,f.w*f.wh,f.h*f.wh);
-									f.drop(x,y,Elements.castle);
-									f.drop(x+1,y,Elements.wall);
-									f.drop(x-1,y,Elements.wall);
-									f.drop(x,y+1,Elements.wall);
-									f.drop(x,y-1,Elements.wall);
-									f.drop(x+1,y+1,Elements.tower);
-									f.drop(x-1,y-1,Elements.tower);
-									f.drop(x-1,y+1,Elements.tower);
-									f.drop(x+1,y-1,Elements.tower);
-
-									f.drop(x+2,y,Elements.moat);
-									f.drop(x-2,y,Elements.moat);
-									f.drop(x,y+2,Elements.bridge);
-									f.drop(x,y+3,Elements.bridge);
-									f.drop(x,y-2,Elements.moat);
-									f.drop(x+2,y+2,Elements.moat);
-									f.drop(x-2,y-2,Elements.moat);
-									f.drop(x-2,y+2,Elements.moat);
-									f.drop(x+2,y-2,Elements.moat);
-
-									f.drop(x+2,y+1,Elements.moat);
-									f.drop(x+2,y-1,Elements.moat);
-									f.drop(x-2,y+1,Elements.moat);
-									f.drop(x-2,y-1,Elements.moat);
-									f.drop(x+1,y+2,Elements.moat);
-									f.drop(x-1,y+2,Elements.moat);
-									f.drop(x+1,y-2,Elements.moat);
-									f.drop(x-1,y-2,Elements.moat);
-								};
-								var dontBuild = function(){
-									f.drop(x,y,val);
-								};
-								var chosen = f.choose(dontBuild,build,0.999);//0.999);
-								chosen();
-							} 
-						}
-					}
-				}
-			};
-
 			Cell.prototype.road = function(val,x,y){
 				var f = this;
-				if(!f.haveRoad && val ===Elements.ground && Math.random()>0.8){
+				if(	!f.haveRoad
+					&& f.roadAttempts<50
+					&& val ===Elements.ground && Math.random()>0.8){
+					//console.log("Road attempts:",f.roadAttempts);
 					var x2 = (f.w/2)+Math.floor(Math.random()*(f.w/2));
 					var y2 = (f.h/2)+Math.floor(Math.random()*(f.h/2));
 					if(x2<1)x2=1;
 					if(y2<1)y2=1;
 					if(x2>f.w-1)x2=f.w-1;
 					if(y2>f.h-1)y2=f.h-1;
-					console.log(x2,y2);
-					if(x2>1 && y2>1 && f.cln[x2][y2]===Elements.road
-						||f.cln[x2][y2]===Elements.ground
-						||f.cln[x2][y2]===Elements.grass
-						||f.cln[x2][y2]===Elements.thickgrass
-						||f.cln[x2][y2]===Elements.sand){
-							if(f.astarwalk(f,x,y,x2,y2,Elements.road)){
-								f.drop(x,y,Elements.road);
-								f.drop(x2,y2,Elements.road);
-								f.haveRoad=true;
+					//console.log("Attempting a road to here: ",x2,y2);
+					var distance = f.distanceFrom(x,y,x2,y2);
+					//console.log("Road distance:",distance);
+					if(distance>50){
+						if(f.cln[x2][y2]===Elements.road
+							||f.cln[x2][y2]===Elements.ground
+							||f.cln[x2][y2]===Elements.grass
+							||f.cln[x2][y2]===Elements.thickgrass
+							||f.cln[x2][y2]===Elements.sand){
+								if(f.astarwalk(f,x,y,x2,y2,Elements.road)){
+									f.drop(x,y,Elements.road);
+									f.drop(x2,y2,Elements.road);
+									f.haveRoad=true;
+									console.log("Road attempts:",f.roadAttempts);
+								} else {
+									c//onsole.log("Road not possible between points");
+									f.roadAttempts++;
+								}
 							}
-						}
+					}
+				} else if (f.roadAttempts>50){
+					console.log("Failed to road in attempts counting:",f.roadAttempts);
 				}
 			};
 
@@ -739,45 +699,38 @@
 						f.drop(r.x,r.y,element);
 					});
 					res = true;
-				} else {
-					console.log("Road not possible between points");
 				}
 				return res;
 			};
 
-			Cell.prototype.randomWalk = function(element,x,y,all_directions,directions,last_direction){
-				if(directions.length>0){
-					var f = this;
-					var v=f.choose(1,-1,0.5);
-					x2 = f.choose(x,x+v,0.5);
-					y2 = f.choose(y,y+v,0.5);
-					var i = Math.floor(Math.random()*directions.length);
-					var dir = directions[i];
-					if(directions.includes(last_direction) && Math.random()>0.15){
-						dir = last_direction;
-					}
-					//console.log(directions,last_direction,dir,i);
-					if(dir==="n"){x2=x;y2=y-1;}
-					else if(dir==="s"){x2=x;y2=y+1;}
-					else if(dir==="e"){x2=x+1;y2=y;}
-					else if(dir==="w"){x2=x-1;y2=y;}
-					var old_val = f.universe[x][y];
-					var val = f.universe[x2][y2];
-					if(x2>0 && x2<f.universe.length-1 && y2>0 && y2<f.universe[x2].length-1){
-						//console.log(Elements.get(old_val),x,y,Elements.get(val),x2,y2);
-						if(val===Elements.ground ||
-							val===Elements.grass ||val===Elements.thickgrass ||
-							val===Elements.sand||val===Elements.leaves){
-							f.drop(x2,y2,element);
-							f.randomWalk(element,x2,y2,all_directions,all_directions,dir);
-						} else {
-							var new_directions = directions.filter(function(v){return v!==dir;});
-							f.randomWalk(element,x,y,all_directions,new_directions,last_direction);
+			Cell.prototype.placeCastle = function(val,x,y){
+				var f = this;
+				if(!f.haveCastle){
+					var adj = f.getAdjascent(x,y,f);
+					if(adj.s===Elements.road){
+						var isCastleGround = function(val){
+							return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
+						};
+						if(isCastleGround(val)){
+							if(adj.containedNorth(Elements.ground)||adj.containedNorth(Elements.thickgrass)||adj.containedNorth(Elements.grass))
+							{
+								y= y-2;
+								f.drop(x,y,Elements.castle);
+								f.drop(x+1,y,Elements.wall);
+								f.drop(x-1,y,Elements.wall);
+								f.drop(x,y+1,Elements.wall);
+								f.drop(x,y-1,Elements.wall);
+								f.drop(x+1,y+1,Elements.tower);
+								f.drop(x-1,y-1,Elements.tower);
+								f.drop(x-1,y+1,Elements.tower);
+								f.drop(x+1,y-1,Elements.tower);
+								f.drop(x,y+2,Elements.bridge);
+							}
 						}
 					}
 				}
-			}
-
+			};
+			
 // Page & Button operations
 
 			//I don't know why it is called Cell when it is the whole map
@@ -804,8 +757,8 @@
 				{t:1,f:c.seedGrass},
 				{t:30,f:c.growGrass},
 				{t:2,f:c.grassThicken},
-				{t:1,f:c.placeCastle},
-				{t:1,f:c.road}
+				{t:1,f:c.road},
+				{t:1,f:c.placeCastle}
 			];
 
 			//This causes the process to work with the window to animate it.
@@ -835,8 +788,8 @@
 			var name = function(){
 				var starts = ["Vos","Cal","Bra","La", "Le", "Ben-", "Fra","Min","El","Glam", "Grey-", "Porto-","High-", 
 								"Co", "Chri", "Saint-", "Glum-","Has","Fro","Gla","Gli","Blu","Desolate-", "Mysterious-",
-								"Ksa","O","A","E", "Haunting-", "Fallow-", "High", "Late", "Lake ", "Lake A", "Lake E", 
-								"Mount A", "Lake O", "Mount E","Cape","Red-","Blue-","Green-"];
+								"Ksa","O","A","E", "Stalin", "Lenin", "Haunting-", "Fallow-", "High", "Late", "Lake ", 
+								"Lake A", "Lake E", "Mount A", "Lake O", "Mount E","Cape","Red-","Blue-","Green-"];
 
 				var mids = ["ford","cos","bra","ma","ka","bro","ich","lo","cole","si","se","fro","klo","gra","pre","spo", 
 							"pun", "krel","kun","bo","hehe", "hoho", "","froo","ning","pla","wro","blaf", "cla", "ra", 
@@ -844,7 +797,7 @@
 
 				var ends = ["nova","land","noc"," landing","sia","po","mra","mouth","tak"," water"," machi", "grad", "scotia", 
 							"helm","man", " sword", "-yama","-bluff", "wold"," shadow"," farm", " willow", " mura", "naka", 
-							" hill", "mia", "be", " bay", " leigh","berg","isle", " island"," cove","tt","k","s","p","r"," bottom", 
+							" hill", "d","mia", "be", " bay", " leigh","berg","isle", " island"," cove","tt","k","s","p","r"," bottom", 
 							" base", " region"];
 							
 				var pick_start = Math.round(Math.random()*(starts.length-1));
