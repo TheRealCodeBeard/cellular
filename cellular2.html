@@ -171,8 +171,7 @@
 				me.haveCastle=false;
 				me.haveRoad=false;
 				me.roadAttempts=0;
-				me.lastCastleX = 0;
-				me.lastCastleY = 0;
+				me.castles=[];
 			};
 		
 			//Helper function that wraps a random choice between a and b.
@@ -205,8 +204,7 @@
 				me.haveCastle=false;
 				me.haveRoad=false;
 				me.roadAttempts=0;
-				me.lastCastleX = 0;
-				me.lastCastleY = 0;
+				me.castles=[];
 				me.generate();
 			};
 
@@ -719,28 +717,37 @@
 						var isCastleGround = function(val){
 							return val === Elements.ground || val === Elements.thickgrass || val === Elements.grass;
 						};
-						var drawCastle = function(x,y){
-							f.drop(x,y,Elements.castle);
-							f.drop(x+1,y,Elements.wall);
-							f.drop(x-1,y,Elements.wall);
-							f.drop(x,y+1,Elements.wall);
-							f.drop(x,y-1,Elements.wall);
-							f.drop(x+1,y+1,Elements.tower);
-							f.drop(x-1,y-1,Elements.tower);
-							f.drop(x-1,y+1,Elements.tower);
-							f.drop(x+1,y-1,Elements.tower);
-							f.drop(x,y+2,Elements.bridge);
-							f.lastCastleX = x;
-							f.lastCastleY = y;
+						var drawCastle = function(cx,cy){
+							f.drop(cx,cy,Elements.castle);
+							f.drop(cx+1,cy,Elements.wall);
+							f.drop(cx-1,cy,Elements.wall);
+							f.drop(cx,cy+1,Elements.wall);
+							f.drop(cx,cy-1,Elements.wall);
+							f.drop(cx+1,cy+1,Elements.tower);
+							f.drop(cx-1,cy-1,Elements.tower);
+							f.drop(cx-1,cy+1,Elements.tower);
+							f.drop(cx+1,cy-1,Elements.tower);
+							f.drop(cx,cy+2,Elements.bridge);
+							f.castles.push({x:cx,y:cy});
 						}
+						var distanceFromClosestCastle = function(castles,cx,cy){
+							var distances = castles.map(function(castle){
+								return Math.floor(f.distanceFrom(cx,cy,castle.x,castle.y));
+							});
+							distances.sort();
+							return distances[0];
+						};
 						if(isCastleGround(val)){
 							if(adj.containedNorth(Elements.ground)||adj.containedNorth(Elements.thickgrass)||adj.containedNorth(Elements.grass))
 							{
 								y= y-2;
-								if(f.lastCastleX && f.lastCastleY){
-									var distance = f.distanceFrom(x,y,f.lastCastleX,f.lastCastleY);
-									if(distance>10) drawCastle(x,y);
-									else(console.log("Too cose to last castle"));
+								if(f.castles.length>0){
+									var distance =  distanceFromClosestCastle(f.castles,x,y);
+									if(distance>10) {
+										drawCastle(x,y);
+									} else {
+										console.log("Too cose to last castle")
+									};
 								} else {
 									drawCastle(x,y);
 								}
