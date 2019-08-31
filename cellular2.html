@@ -63,6 +63,7 @@
 	</div>
 	<script type='text/javascript' src='astar.js'></script>
 	<script type='text/javascript'>
+		/*
 		//A test of the A* script
 		var graph = new Graph([
 			[1,1,1,1],
@@ -76,6 +77,7 @@
 		console.log(start.toString());
 		console.log(end.toString());
 		console.log(result.toString());
+		*/
 	</script>
 	<script type='text/javascript' src="seedrandom.min.js"></script>
   	<script type="text/javascript"> 
@@ -105,7 +107,7 @@
 			tower		: 'rgb(40,10,40)',
 			moat 		: 'rgb(0,0,255)',
 			bridge 		: 'rgb(170,92,55)',
-			road		: 'rgb(255,0,0)',//'rgb(120,120,120)',
+			road		: 'rgb(145,67,30)',//'rgb(120,120,120)',
 			get:function(name){
 				return this[name];
 			}
@@ -167,6 +169,7 @@
 				me.h=me.ctx.canvas.clientHeight/me.wh;
 				me.cln = null;
 				me.haveCastle=false;
+				me.haveRoad=false;
 			};
 		
 			//Helper function that wraps a random choice between a and b.
@@ -197,6 +200,7 @@
 				me.x=null;
 				me.y=null;
 				me.haveCastle=false;
+				me.haveRoad=false;
 				me.generate();
 			};
 
@@ -669,7 +673,7 @@
 								var dontBuild = function(){
 									f.drop(x,y,val);
 								};
-								var chosen = f.choose(dontBuild,build,0.99);//0.999);
+								var chosen = f.choose(dontBuild,build,0.999);//0.999);
 								chosen();
 							} 
 						}
@@ -679,14 +683,66 @@
 
 			Cell.prototype.road = function(val,x,y){
 				var f = this;
-				if(val===Elements.ground||val===Elements.grass||val===Elements.thickgrass||val===Elements.leaves){
-					var adj = f.getAdjascent(x,y,f);
-					if(adj.n===Elements.bridge){
-						f.drop(x,y,Elements.road);//Draws the first road
-						var directions = ["n","s","e","w"];
-						f.randomWalk(Elements.road,x,y,directions,directions);
+				if(!f.haveRoad && val ===Elements.ground && Math.random()>0.8){
+					var x2 = (f.w/2)+Math.floor(Math.random()*(f.w/2));
+					var y2 = (f.h/2)+Math.floor(Math.random()*(f.h/2));
+					if(x2<1)x2=1;
+					if(y2<1)y2=1;
+					if(x2>f.w-1)x2=f.w-1;
+					if(y2>f.h-1)y2=f.h-1;
+					console.log(x2,y2);
+					if(x2>1 && y2>1 && f.cln[x2][y2]===Elements.road
+						||f.cln[x2][y2]===Elements.ground
+						||f.cln[x2][y2]===Elements.grass
+						||f.cln[x2][y2]===Elements.thickgrass
+						||f.cln[x2][y2]===Elements.sand){
+							if(f.astarwalk(f,x,y,x2,y2,Elements.road)){
+								f.drop(x,y,Elements.road);
+								f.drop(x2,y2,Elements.road);
+								f.haveRoad=true;
+							}
+						}
+				}
+			};
+
+			Cell.prototype.astarwalk = function(f,x1,y1,x2,y2,element){
+				var res = false;
+				var map = f.clone();
+				var pass = function(val){
+					return val === Elements.road
+						|| val === Elements.ground
+						//|| val === Elements.water
+						//|| val === Elements.deepwater
+						|| val === Elements.sand
+						|| val === Elements.grass
+						|| val === Elements.thickgrass
+						|| val === Elements.leaves
+					;
+				};
+				for(var y=0;y<f.h;y++){
+					for(var x=0;x<f.h;x++)
+					{
+						if(pass(map[x][y])) map[x][y] = 1;
+						else map[x][y] = 0;
 					}
 				}
+				var graph = new Graph(map,{ diagonal: false });
+				//console.log(graph.toString());
+				var start = graph.grid[x1][y1];
+				var end = graph.grid[x2][y2];
+				var result = astar.search(graph, start, end);
+				if(result.length>0){
+					//console.log(result);
+					//console.log("Result:",result.toString());
+					result.forEach(function(r){
+						//console.log(r.x,r.y);
+						f.drop(r.x,r.y,element);
+					});
+					res = true;
+				} else {
+					console.log("Road not possible between points");
+				}
+				return res;
 			};
 
 			Cell.prototype.randomWalk = function(element,x,y,all_directions,directions,last_direction){
