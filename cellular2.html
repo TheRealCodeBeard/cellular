@@ -111,6 +111,7 @@
 			bridge 		: 'rgb(170,92,55)',
 			road		: 'rgb(145,67,30)',//'rgb(120,120,120)',
 			farm		: 'rgb(255,200,0)',
+			altfarm		: 'rgb(230,160,0)',
 			get:function(name){
 				return this[name];
 			}
@@ -142,6 +143,7 @@
 			bridge:20,
 			road:21,
 			farm:22,
+			altfarm:23,
   			build:function(){
   				for(var el in this){
   					if(isNaN(el)){
@@ -259,7 +261,7 @@
 						me.castles.forEach(function(castle){
 							me.ctx.beginPath();
 							me.ctx.arc(wh/2+castle.x*wh, wh/2+castle.y*wh,15*wh,0,2*Math.PI);
-							me.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+							me.ctx.strokeStyle = "rgba(255,255,255,0.1)";
 							me.ctx.lineWidth = me.wh;
 							me.ctx.stroke();
 						});
@@ -791,15 +793,45 @@
 						var adj = f.getAdjascent(x,y,f);
 						if(adj.areAll(Elements.thickgrass)){
 							var distance = f.distanceFromClosestCastle(x,y);
-							console.log(distance);
 							if(distance<15){
-								console.log("Farm:",distance);
 								f.drop(x,y,Elements.farm);
 							}
 						}
 					}
 				}
 			}
+			Cell.prototype.growFarm = function(val,x,y){
+				var f = this;
+				if(val === Elements.thickgrass){
+					var adj = f.getAdjascent(x,y,f);
+					var distance = f.distanceFromClosestCastle(x,y);
+					if(distance<15){
+						if(adj.areAny(Elements.farm)){
+							f.drop(x,y,Elements.farm);
+						}
+					}
+				}
+			};
+
+			Cell.prototype.fillFarm = function(val,x,y){
+				var f = this;
+				if(val === Elements.thickgrass||val === Elements.grass){
+					var adj = f.getAdjascent(x,y,f);
+					if(	adj.areAll(Elements.farm)
+						||adj.partialContained(Elements.farm)){
+							f.drop(x,y,Elements.farm)
+					}
+				}
+			};
+
+			Cell.prototype.textureFarm = function(val,x,y){
+				var f = this;
+				if(val===Elements.farm){
+					f.drop(x,y,f.choose(Elements.farm,Elements.altfarm,0.5));
+				}
+			};
+
+			
 
 // Page & Button operations
 
@@ -829,7 +861,10 @@
 				{t:2,f:c.grassThicken},
 				{t:1,f:c.road},
 				{t:1,f:c.placeCastle},
-				{t:1,f:c.seedFarm}
+				{t:1,f:c.seedFarm},
+				{t:3,f:c.growFarm},
+				{t:2,f:c.fillFarm},
+				{t:1,f:c.textureFarm}
 			];
 
 			//This causes the process to work with the window to animate it.
