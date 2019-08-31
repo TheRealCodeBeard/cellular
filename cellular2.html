@@ -15,7 +15,7 @@
 			font-size: 20px;
 			text-align: center;
 		}
-		#gen,#rock,#count
+		#gen,#rock,#count,#water
 		{
 			color:white;
 			font-family: monospace;
@@ -54,6 +54,8 @@
 		<div class="controls">
 			<label id="rock">rockiness:</label>
 			<input type="text" id="chance" value="0.9"/> 		
+			<label id="water">water:</label>
+			<input type="text" id="water_chance" value="0.8"/> 	
 			<button id="do">Generate</button>	
 		</div>
 		<div class="controls">
@@ -108,6 +110,7 @@
 			moat 		: 'rgb(0,0,255)',
 			bridge 		: 'rgb(170,92,55)',
 			road		: 'rgb(145,67,30)',//'rgb(120,120,120)',
+			farm		: 'rgb(255,200,0)',
 			get:function(name){
 				return this[name];
 			}
@@ -138,6 +141,7 @@
 			moat:19,
 			bridge:20,
 			road:21,
+			farm:22,
   			build:function(){
   				for(var el in this){
   					if(isNaN(el)){
@@ -171,6 +175,7 @@
 				me.haveCastle=false;
 				me.haveRoad=false;
 				me.roadAttempts=0;
+				me.wroteFailed = false;
 				me.castles=[];
 			};
 		
@@ -205,6 +210,7 @@
 				me.haveRoad=false;
 				me.roadAttempts=0;
 				me.castles=[];
+				me.wroteFailed=false;
 				me.generate();
 			};
 
@@ -215,6 +221,17 @@
 				if(!x && !y) return true;
 				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
 				return measured;
+			};
+
+			Cell.prototype.distanceFromClosestCastle = function(x,y){
+				//We want to know if we are too close to another castle, looks strange to be bunched up so we track where castles are
+				//And check how far away we are before drawing.
+				var me = this;
+				var distances = me.castles.map(function(castle){
+					return Math.floor(me.distanceFrom(x,y,castle.x,castle.y));
+				});
+				distances.sort(function(a,b){return a-b;});
+				return distances[0];
 			};
 
 			//Guess what? This gets the colour of the given element. MAGIC! 
@@ -234,8 +251,21 @@
 						for(var j = 0; j < me.h; j++) {
 							me.ctx.fillStyle = me.getColour(me.universe[j][i]);
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
+
 						}
 					}
+					//Bit of a hack for debugging castle distance.
+					if(me.castles.length>0){
+						me.castles.forEach(function(castle){
+							me.ctx.beginPath();
+							me.ctx.arc(wh/2+castle.x*wh, wh/2+castle.y*wh,15*wh,0,2*Math.PI);
+							me.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+							me.ctx.lineWidth = me.wh;
+							me.ctx.stroke();
+						});
+
+					}
+
 				}
 			};
 
@@ -528,9 +558,10 @@
 
 			Cell.prototype.waterFlow = function(val,x,y){
 				var f = this;
+				var v = document.getElementById('water_chance').value;
 				if(val===Elements.ground){
 					var adj = f.getAdjascent(x,y,f);
-					if(adj.nsewAny(Elements.water))f.drop(x,y,f.choose(val,3,0.8));
+					if(adj.nsewAny(Elements.water))f.drop(x,y,f.choose(val,3,v));
 				}
 			};
 
@@ -666,8 +697,9 @@
 								}
 							}
 					}
-				} else if (f.roadAttempts>49){
+				} else if (f.roadAttempts>49 && !f.wroteFailed){
 					console.log("Failed to road in attempts counting:",f.roadAttempts);
+					f.wroteFailed=true;
 				}
 			};
 
@@ -730,15 +762,6 @@
 							f.drop(cx,cy+2,Elements.bridge);
 							f.castles.push({x:cx,y:cy});//Add to the array of castles, used for distance checkign
 						}
-						var distanceFromClosestCastle = function(castles,cx,cy){
-							//We want to know if we are too close to another castle, looks strange to be bunched up so we track where castles are
-							//And check how far away we are before drawing.
-							var distances = castles.map(function(castle){
-								return Math.floor(f.distanceFrom(cx,cy,castle.x,castle.y));
-							});
-							distances.sort(function(a,b){return a-b;});
-							return distances[0];
-						};
 						if(isCastleGround(val)){
 							//Check there is space to draw the castles
 							//Castles are only ever to the north of roads.
@@ -746,8 +769,8 @@
 							{
 								y= y-2;//We start drawing two spaces above the road
 								if(f.castles.length>0){
-									var distance =  distanceFromClosestCastle(f.castles,x,y);
-									if(distance>20) {//Only draw a castle if we are not too close to another castle
+									var distance =  f.distanceFromClosestCastle(x,y);
+									if(distance>15) {//Only draw a castle if we are not too close to another castle
 										drawCastle(x,y);
 									} else {
 										console.log("Too cose to last castle");//Tell people why we didn't draw a castle
@@ -760,6 +783,23 @@
 					}
 				}
 			};
+
+			Cell.prototype.seedFarm = function(val,x,y){
+				var f = this;
+				if(f.castles.length>0){
+					if(val === Elements.thickgrass){
+						var adj = f.getAdjascent(x,y,f);
+						if(adj.areAll(Elements.thickgrass)){
+							var distance = f.distanceFromClosestCastle(x,y);
+							console.log(distance);
+							if(distance<15){
+								console.log("Farm:",distance);
+								f.drop(x,y,Elements.farm);
+							}
+						}
+					}
+				}
+			}
 
 // Page & Button operations
 
@@ -788,7 +828,8 @@
 				{t:30,f:c.growGrass},
 				{t:2,f:c.grassThicken},
 				{t:1,f:c.road},
-				{t:1,f:c.placeCastle}
+				{t:1,f:c.placeCastle},
+				{t:1,f:c.seedFarm}
 			];
 
 			//This causes the process to work with the window to animate it.
