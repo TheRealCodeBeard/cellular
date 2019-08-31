@@ -15,7 +15,7 @@
 			font-size: 20px;
 			text-align: center;
 		}
-		#gen,#rock,#count,#water
+		#gen,#rock,#count,#water,#debg
 		{
 			color:white;
 			font-family: monospace;
@@ -50,6 +50,8 @@
 			<input type="text" id="name"/>
 			<input type="checkbox" id="generate">
 			<label id="gen">make name</label>
+			<input type="checkbox" id="debug">
+			<label id="debg">debug</label>
 		</div>
 		<div class="controls">
 			<label id="rock">rockiness:</label>
@@ -113,6 +115,7 @@
 			farm		: 'rgb(255,200,0)',
 			altfarm		: 'rgb(230,160,0)',
 			house		: 'rgb(200,55,55)',//'rgb(155,155,155)',
+			cave		: 'rgb(0,0,0)',
 			get:function(name){
 				return this[name];
 			}
@@ -146,6 +149,7 @@
 			farm:22,
 			altfarm:23,
 			house:24,
+			cave:25,
   			build:function(){
   				for(var el in this){
   					if(isNaN(el)){
@@ -255,20 +259,28 @@
 						for(var j = 0; j < me.h; j++) {
 							me.ctx.fillStyle = me.getColour(me.universe[j][i]);
 							me.ctx.fillRect(wh*j, wh*i, wh*j+wh, wh*i+wh);
-
+							if(me.universe[j][i]===Elements.house){
+								me.ctx.beginPath();
+								me.ctx.strokeStyle = "rgba(50,0,0,0.3)";
+								me.ctx.moveTo(wh*j, wh*i+wh/2);
+								me.ctx.lineTo(wh*j+wh, wh*i+wh/2);
+								me.ctx.stroke(); 
+							}
 						}
 					}
-					//Bit of a hack for debugging castle distance.
-					if(me.castles.length>0){
-						me.castles.forEach(function(castle){
-							me.ctx.beginPath();
-							me.ctx.arc(wh/2+castle.x*wh, wh/2+castle.y*wh,15*wh,0,2*Math.PI);
-							me.ctx.strokeStyle = "rgba(255,255,255,0.1)";
-							me.ctx.lineWidth = me.wh;
-							me.ctx.stroke();
-						});
+					if(document.getElementById('debug').checked){
+						//Bit of a hack for debugging castle distance.
+						if(me.castles.length>0){
+							me.castles.forEach(function(castle){
+								me.ctx.beginPath();
+								me.ctx.arc(wh/2+castle.x*wh, wh/2+castle.y*wh,15*wh,0,2*Math.PI);
+								me.ctx.strokeStyle = "rgba(255,255,255,0.3)";
+								me.ctx.lineWidth = me.wh;
+								me.ctx.stroke();
+							});
 
-					}
+						}
+					};
 
 				}
 			};
@@ -551,6 +563,15 @@
 					} else if (adj.nsewAll(Elements.snow) || adj.partialContained(Elements.snow)){
 						f.drop(x,y,Elements.snow);
 					}
+				}
+			};
+
+			Cell.prototype.discoverCaves = function(val,x,y){
+				var f = this;
+				if(val === Elements.rocks){
+					var adj = f.getAdjascent(x,y,f);
+					if((adj.e===Elements.rocks && adj.w===Elements.rocks) || (adj.n===Elements.rocks && adj.s===Elements.rocks))
+					f.drop(x,y,f.choose(val,Elements.cave,0.999));
 				}
 			};
 
@@ -871,6 +892,7 @@
 				{t:1,f:c.highFill},
 				{t:1,f:c.highSquash},
 				{t:3,f:c.snowCap},
+				{t:3,f:c.discoverCaves},
 				{t:1,f:c.seedWater},
 				{t:15,f:c.waterFlow},
 				{t:10,f:c.waterFill},
