@@ -46,6 +46,8 @@
 			space 			: 'rgb(0,0,0)',
 			star 			: 'rgb(255,255,0)',
 			star_influence	: 'rgba(255,255,255,0.1)',
+			planet			: 'rgb(0,255,0)',
+			orbit			: 'rgba(255,255,255,0.2)',
 			get:function(name){
 				return this[name];
 			}
@@ -54,6 +56,47 @@
   	</script>
 	<script type="text/javascript">
 		(function(){
+
+//Planet
+
+			var Planet = function(x,y){
+				var me = this;
+				me.x = x;
+				me.y = y;
+				me.r = 2;
+				me.distance = Math.floor(15 + Math.random()*20);
+				me.orbit = Math.random()*(2*Math.PI);
+				me.colour = Colours.planet;
+			};
+
+			Planet.prototype.draw = function(ctx){
+				var me = this;
+			
+				//This is the orbit the planet should be moving around
+				ctx.beginPath();
+				ctx.arc(me.x, me.y,me.distance,0,2*Math.PI);
+				ctx.strokeStyle = Colours.orbit;
+				ctx.lineWidth = me.r;
+				ctx.stroke();
+
+				ctx.save();
+
+				ctx.translate(me.x,me.y);
+				ctx.rotate(me.orbit);//Rotate as far as we like
+				ctx.beginPath();
+				ctx.arc(me.distance, 0, me.r, 0, 2*Math.PI);//20 points offset from due east. 
+				ctx.fillStyle = me.colour;
+				ctx.fill();
+
+				ctx.restore();
+			};
+
+			Planet.prototype.do = function(){
+				var me = this;
+				var bit = (2*Math.PI)*0.01;
+				me.orbit = me.orbit+bit;
+				if(me.orbit>=(2*Math.PI-bit))me.orbit = 0;
+			};
 
 //Star
 
@@ -65,7 +108,7 @@
 				me.colour = Colours.star;
 				me.ping = 0;
 				me.flipper=true;
-				me.planets = [];
+				me.planets = [new Planet(x,y),new Planet(x,y)];
 			};
 
 			Star.prototype.draw = function(ctx){
@@ -80,10 +123,12 @@
 				ctx.strokeStyle = Colours.star_influence;
 				ctx.lineWidth = me.r;
 				ctx.stroke();
+				me.planets.forEach(p=>p.draw(ctx));
 			};
 
 			Star.prototype.do = function(){
 				var me = this;
+				me.planets.forEach(p=>p.do());
 				var bit = (2*Math.PI)*0.01;
 				if(me.flipper) me.ping = me.ping + bit;
 				else me.ping = me.ping - bit;
@@ -102,7 +147,7 @@
 				var canvas = document.getElementById(canvas_id);
 				me.ctx = canvas.getContext('2d');
 				me.universe=null;
-				me.stars = 2;
+				me.stars = 3;
 				me.w=me.ctx.canvas.clientWidth;//The division here is because one cell is not one pixel
 				me.h=me.ctx.canvas.clientHeight;
 			};
