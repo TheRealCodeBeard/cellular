@@ -43,36 +43,57 @@
 		//This is a look up of the colours to use when drawing the element of the map.
 		//There is only one layer and one cell can only be one colour.
   		var Colours = {
-			space 		: 'rgb(0,0,0)',
-			star 		: 'rgb(255,255,0)',
+			space 			: 'rgb(0,0,0)',
+			star 			: 'rgb(255,255,0)',
+			star_influence	: 'rgba(255,255,255,0.1)',
 			get:function(name){
 				return this[name];
 			}
   		};
 
-		//These are the elements that can be laid in the grid.
-		//Basically it's an enum of numbers.
-  		var Elements = {
-  			space:0,
-			star:1,
-  			build:function(){
-  				for(var el in this){
-  					if(isNaN(el)){
-  						this[this[el]]=el;
-  					}
-	  			}
-  			},
-  			get:function(id){
-  				return this[id];
-  			}
-  		};
-  		Elements.build();//makes a nice lookup
-
   	</script>
 	<script type="text/javascript">
 		(function(){
 
-//Cell base functions, set up etc.
+//Star
+
+			var Star = function(x,y){
+				var me = this;
+				me.x = x;
+				me.y = y;
+				me.r = 2+Math.floor(Math.random()*3);
+				me.colour = Colours.star;
+				me.ping = 0;
+				me.flipper=true;
+				me.planets = [];
+			};
+
+			Star.prototype.draw = function(ctx){
+				var me = this;
+				ctx.beginPath();
+				ctx.arc(me.x, me.y, me.r, 0, 2*Math.PI);
+				ctx.fillStyle = me.colour;
+				ctx.fill();
+
+				ctx.beginPath();
+				ctx.arc(me.x, me.y,15*me.r,me.ping,2*Math.PI);
+				ctx.strokeStyle = Colours.star_influence;
+				ctx.lineWidth = me.r;
+				ctx.stroke();
+			};
+
+			Star.prototype.do = function(){
+				var me = this;
+				var bit = (2*Math.PI)*0.01;
+				if(me.flipper) me.ping = me.ping + bit;
+				else me.ping = me.ping - bit;
+				if(me.ping>=(2*Math.PI-bit) || me.ping<0){
+					me.flipper = !me.flipper;
+				}
+			};
+
+//Space functions, set up etc.
+
 
 			//The cell object is the unit of processing. 
 			//It contains the canvas context and knows how big it is.
@@ -81,10 +102,29 @@
 				var canvas = document.getElementById(canvas_id);
 				me.ctx = canvas.getContext('2d');
 				me.universe=null;
-				me.wh = 3;
-				me.w=me.ctx.canvas.clientWidth/me.wh;//The division here is because one cell is not one pixel
-				me.h=me.ctx.canvas.clientHeight/me.wh;
-				me.cln = null;
+				me.stars = 2;
+				me.w=me.ctx.canvas.clientWidth;//The division here is because one cell is not one pixel
+				me.h=me.ctx.canvas.clientHeight;
+			};
+
+			//calculates the distance between two points.
+			//It was used for the 'game' version, but I thought it might be useful later.
+			Space.prototype.distanceFrom = function(x,y,ax,ay){
+				var sq= function(x){return x*x;};
+				if(!x && !y) return true;
+				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
+				return measured;
+			};
+
+			Space.prototype.distanceFromClosestStar = function(x,y){
+				//We want to know if we are too close to another castle, looks strange to be bunched up so we track where castles are
+				//And check how far away we are before drawing.
+				var me = this;
+				var distances = me.universe.map(function(star){
+					return Math.floor(me.distanceFrom(x,y,star.x,star.y));
+				});
+				distances.sort(function(a,b){return a-b;});
+				return distances[0];
 			};
 		
 			//Helper function that wraps a random choice between a and b.
@@ -97,51 +137,22 @@
 			//The universe is a 2D array that represents the map as numbers.
 			//It is initialised to ground and stone based on a user given value
 			Space.prototype.generate = function(){
-				var f = this;
-				f.universe = [];
-				for(var i = 0; i < f.w; i++) {
-					f.universe[i] = [];
-					for(var j = 0; j < f.h; j++) {
-						f.universe[i][j] = Elements.space;
-					}
-				}
-			};
-		
-			//This clears the current state of the map
-			//and generates a new universe
-			Space.prototype.initialise = function(){
 				var me = this;
-				me.x=null;
-				me.y=null;
-				me.generate();
-			};
-
-			//calculates the distance between two points.
-			//It was used for the 'game' version, but I thought it might be useful later.
-			Space.prototype.distanceFrom = function(x,y,ax,ay){
-				var sq= function(x){return x*x;};
-				if(!x && !y) return true;
-				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
-				return measured;
-			};
-
-			//Guess what? This gets the colour of the given element. MAGIC! 
-			Space.prototype.getColour = function(element){
-				var el = Elements.get(element);
-				return Colours.get(el);
-			};
-
-			Space.prototype.drawStar = function(ctx,x,y,r,colour){
-				ctx.beginPath();
-				ctx.arc(x, y, r, 0, 2*Math.PI);
-				ctx.fillStyle = colour;
-				ctx.fill();
-
-				ctx.beginPath();
-				ctx.arc(x, y,15*r,0,2*Math.PI);
-				ctx.strokeStyle = "rgba(255,255,255,0.5)";
-				ctx.lineWidth = r;
-				ctx.stroke();
+				me.universe = [];
+				var boarder = 75;
+				var safety = 20000;
+				var itr = 0;
+				while(me.universe.length<me.stars && itr<safety){
+					var x = Math.floor(boarder+(Math.random()*(me.w-boarder*2)));
+					var y = Math.floor(boarder+(Math.random()*(me.h-boarder*2)));
+					var distance = me.distanceFromClosestStar(x,y);
+					var star = new Star(x,y);
+					if(!distance || distance>star.r*35){
+						me.universe.push(star);
+					}
+					itr+=1;
+				}
+				if(itr>safety/2)console.log("Safety catch on :",itr);
 			};
 
 			//The main draw method.
@@ -150,110 +161,43 @@
 			Space.prototype.draw = function(){
 				var me = this;				
 				if(me.ctx){
-					var wh = me.wh;
 					me.ctx.fillStyle = Colours.space;
-					me.ctx.fillRect(0, 0, wh*me.w, wh*me.h);
-
-					for(var i = 0; i < me.w; i++) {
-						for(var j = 0; j < me.h; j++) {
-							if(me.universe[j][i]===Elements.star){
-								me.drawStar(me.ctx,wh*j,wh*i,wh,me.getColour(me.universe[j][i]));
-							}
-						}
-					}
+					me.ctx.fillRect(0, 0, me.w, me.h);
+					me.universe.forEach(el=>el.draw(me.ctx));
 				}
 			};
 
-			//This sets the value of given co-ordinate in the universie to the number given.
-			Space.prototype.drop = function(x,y,v){
-				try{
-					if(v!==this.cln[x][y]){
-						this.universe[x][y]=v;
-						return true;
-					}
-					return false;
-				} catch(e) {//Can't remember why I had a try catch in here?
-					console.log('exception:',e);
-					console.log(x,y);
-					return false;
-				}
-			};
-
-			//Copy the universe so we don't 'work on ourselves'
-			Space.prototype.clone = function(){
+			Space.prototype.do = function(){
 				var me = this;
-				var cln = [];
-				var i,l = null;
-    			for(i = 0; i< me.w; i++) {
-					cln[i] = me.universe[i].slice(0);
-				}
-				return cln;
-			};
-
-			//One step of the process is to clone the universe
-			//Get the current value in a loop and call process above
-			Space.prototype.step = function(){
-				var f = this;
-				var x,y,val = null;
-				f.cln = f.clone();
-				for(x = 0; x < f.w; x++) {
-					for(y = 0; y < f.h; y++) {
-						val = f.cln[x][y];
-						f.current(val,x,y);
-					}
-				}
-			};
-
-//processes
-//All of these functions loop the grid ONCE and follow particular rules.
-//Thew are composed in the list below.
-
-			Space.prototype.space = function(val,x,y){
-				var f = this;
-				if(Math.random()>0.9999){
-					f.drop(x,y,Elements.star);
-				}
+				me.universe.forEach(el=>el.do());
+				me.draw();
 			};
 
 // Page & Button operations
 
 			//I don't know why it is called Cell when it is the whole map
 			var s = new Space('canvas');
-			
-			//This is the list where you compose the proceedures (f)
-			//How many time they iterate (t) and the order in which they are done
-			var list = [
-				{t:1,f:s.space}
-			];
 
-			//This causes the process to work with the window to animate it.
-			var perform = function(l){
-				var i = 1;
-				var interval = null;
-				if(l<list.length){//If l is still on the given composed list of actions
-					var t = list[l].t;//Take lookup out of loops
-					s.current = list[l].f;//Set current to the given function
-					interval = window.setInterval(function(){
-						s.step();//Perform the current process.
-						if(i>t) {//if the number of times given in the list is not reached
-							clearInterval(interval);
-							perform(l+1);//do it again
-						}
-						i++;
-					}, 0);//Now reduced this down to 0. So it redraws 'as soon as it can'.
+			var fpsInterval = 1000/24;//24 frames per second
+			var now,elapsed,then;
+
+			var animate = function(){
+				window.requestAnimationFrame(animate);
+				now = Date.now();//Graps when animate called
+				elapsed = now - then;//Checks how long has elapsd in ms
+				if (elapsed > fpsInterval) {//if a frame interval has elapsed
+					then = now - (elapsed % fpsInterval);//then set last frame time
+					s.do();//and do the work
 				}
-				s.draw();//Moved draw out here so we only get updates between list items
 			};
-
-
-//This attaches all the work to the button
 
 			//When clicked, generates map
 			document.getElementById('do').onclick=function(){
 				//Using a random seed library to allow for same map generation
-				Math.seedrandom("space");
-				s.initialise();//Initialise the grid.
-				perform(0);//Perform th efirst item on the given list
+				Math.seedrandom("space" + Date.now().toString());
+				s.generate();
+				then = Date.now();//seed 'then' for the animation, as we haven't drawn a frame yet
+				animate();
 			};
 		}());
 	</script>
