@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Space</title>
+	<meta charset="UTF-8">
+	<style type="text/css">
+		#canvas
+		{
+			border:solid 2px maroon;
+		}
+		body
+		{
+			background-color:black;
+		}
+		.holder
+		{
+			padding-top:10px;
+			text-align:center;
+		}
+		.controls{
+			margin-bottom: 5px;
+		}
+		.controls input,.controls button{
+			border:solid 1px gray;
+			font-family: monospace;
+			vertical-align: -5px;
+		}
+		.controls input{
+			width: 3em;
+		}
+	</style>
+</head>
+<body>
+	<div class='holder'>
+		<canvas id="canvas" width="500" height="500">Your browser doesn't support HTML5 Canvas.</canvas>
+		<div class="controls">
+			<button id="do">Generate</button>	
+		</div>
+	</div>
+	<script type='text/javascript' src='astar.js'></script>
+	<script type='text/javascript' src="seedrandom.min.js"></script>
+  	<script type="text/javascript"> 
+		//This is a look up of the colours to use when drawing the element of the map.
+		//There is only one layer and one cell can only be one colour.
+  		var Colours = {
+			space 		: 'rgb(0,0,0)',
+			star 		: 'rgb(255,255,0)',
+			get:function(name){
+				return this[name];
+			}
+  		};
+
+		//These are the elements that can be laid in the grid.
+		//Basically it's an enum of numbers.
+  		var Elements = {
+  			space:0,
+			star:1,
+  			build:function(){
+  				for(var el in this){
+  					if(isNaN(el)){
+  						this[this[el]]=el;
+  					}
+	  			}
+  			},
+  			get:function(id){
+  				return this[id];
+  			}
+  		};
+  		Elements.build();//makes a nice lookup
+
+  	</script>
+	<script type="text/javascript">
+		(function(){
+
+//Cell base functions, set up etc.
+
+			//The cell object is the unit of processing. 
+			//It contains the canvas context and knows how big it is.
+			var Space = function(canvas_id){
+				var me = this;
+				var canvas = document.getElementById(canvas_id);
+				me.ctx = canvas.getContext('2d');
+				me.universe=null;
+				me.wh = 3;
+				me.w=me.ctx.canvas.clientWidth/me.wh;//The division here is because one cell is not one pixel
+				me.h=me.ctx.canvas.clientHeight/me.wh;
+				me.cln = null;
+			};
+		
+			//Helper function that wraps a random choice between a and b.
+			//So this could be a number, object or function.
+			Space.prototype.choose = function(a,b,limit){
+				return (Math.random()< limit ? a : b);
+			};
+
+			//Initially generate the universe. 
+			//The universe is a 2D array that represents the map as numbers.
+			//It is initialised to ground and stone based on a user given value
+			Space.prototype.generate = function(){
+				var f = this;
+				f.universe = [];
+				for(var i = 0; i < f.w; i++) {
+					f.universe[i] = [];
+					for(var j = 0; j < f.h; j++) {
+						f.universe[i][j] = Elements.space;
+					}
+				}
+			};
+		
+			//This clears the current state of the map
+			//and generates a new universe
+			Space.prototype.initialise = function(){
+				var me = this;
+				me.x=null;
+				me.y=null;
+				me.generate();
+			};
+
+			//calculates the distance between two points.
+			//It was used for the 'game' version, but I thought it might be useful later.
+			Space.prototype.distanceFrom = function(x,y,ax,ay){
+				var sq= function(x){return x*x;};
+				if(!x && !y) return true;
+				var measured = Math.sqrt(sq(ay-y)+sq(ax-x));
+				return measured;
+			};
+
+			//Guess what? This gets the colour of the given element. MAGIC! 
+			Space.prototype.getColour = function(element){
+				var el = Elements.get(element);
+				return Colours.get(el);
+			};
+
+			Space.prototype.drawStar = function(ctx,x,y,r,colour){
+				ctx.beginPath();
+				ctx.arc(x, y, r, 0, 2*Math.PI);
+				ctx.fillStyle = colour;
+				ctx.fill();
+
+				ctx.beginPath();
+				ctx.arc(x, y,15*r,0,2*Math.PI);
+				ctx.strokeStyle = "rgba(255,255,255,0.5)";
+				ctx.lineWidth = r;
+				ctx.stroke();
+			};
+
+			//The main draw method.
+			//It loops the 2D array of the universe
+			//and creates a rectangle of the cell size and universe element colour at each location.
+			Space.prototype.draw = function(){
+				var me = this;				
+				if(me.ctx){
+					var wh = me.wh;
+					me.ctx.fillStyle = Colours.space;
+					me.ctx.fillRect(0, 0, wh*me.w, wh*me.h);
+
+					for(var i = 0; i < me.w; i++) {
+						for(var j = 0; j < me.h; j++) {
+							if(me.universe[j][i]===Elements.star){
+								me.drawStar(me.ctx,wh*j,wh*i,wh,me.getColour(me.universe[j][i]));
+							}
+						}
+					}
+				}
+			};
+
+			//This sets the value of given co-ordinate in the universie to the number given.
+			Space.prototype.drop = function(x,y,v){
+				try{
+					if(v!==this.cln[x][y]){
+						this.universe[x][y]=v;
+						return true;
+					}
+					return false;
+				} catch(e) {//Can't remember why I had a try catch in here?
+					console.log('exception:',e);
+					console.log(x,y);
+					return false;
+				}
+			};
+
+			//Copy the universe so we don't 'work on ourselves'
+			Space.prototype.clone = function(){
+				var me = this;
+				var cln = [];
+				var i,l = null;
+    			for(i = 0; i< me.w; i++) {
+					cln[i] = me.universe[i].slice(0);
+				}
+				return cln;
+			};
+
+			//One step of the process is to clone the universe
+			//Get the current value in a loop and call process above
+			Space.prototype.step = function(){
+				var f = this;
+				var x,y,val = null;
+				f.cln = f.clone();
+				for(x = 0; x < f.w; x++) {
+					for(y = 0; y < f.h; y++) {
+						val = f.cln[x][y];
+						f.current(val,x,y);
+					}
+				}
+			};
+
+//processes
+//All of these functions loop the grid ONCE and follow particular rules.
+//Thew are composed in the list below.
+
+			Space.prototype.space = function(val,x,y){
+				var f = this;
+				if(Math.random()>0.9999){
+					f.drop(x,y,Elements.star);
+				}
+			};
+
+// Page & Button operations
+
+			//I don't know why it is called Cell when it is the whole map
+			var s = new Space('canvas');
+			
+			//This is the list where you compose the proceedures (f)
+			//How many time they iterate (t) and the order in which they are done
+			var list = [
+				{t:1,f:s.space}
+			];
+
+			//This causes the process to work with the window to animate it.
+			var perform = function(l){
+				var i = 1;
+				var interval = null;
+				if(l<list.length){//If l is still on the given composed list of actions
+					var t = list[l].t;//Take lookup out of loops
+					s.current = list[l].f;//Set current to the given function
+					interval = window.setInterval(function(){
+						s.step();//Perform the current process.
+						if(i>t) {//if the number of times given in the list is not reached
+							clearInterval(interval);
+							perform(l+1);//do it again
+						}
+						i++;
+					}, 0);//Now reduced this down to 0. So it redraws 'as soon as it can'.
+				}
+				s.draw();//Moved draw out here so we only get updates between list items
+			};
+
+
+//This attaches all the work to the button
+
+			//When clicked, generates map
+			document.getElementById('do').onclick=function(){
+				//Using a random seed library to allow for same map generation
+				Math.seedrandom("space");
+				s.initialise();//Initialise the grid.
+				perform(0);//Perform th efirst item on the given list
+			};
+		}());
+	</script>
+</body>
+</html>
